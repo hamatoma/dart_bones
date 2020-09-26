@@ -5,4 +5,4 @@ enum Bool {
   TRUE,
 }
 
-const BONES_VERSION = '0.2.1';
+const BONES_VERSION = '0.2.2';

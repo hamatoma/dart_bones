@@ -1,3 +1,7 @@
+## [0.2.2] - 2020.09.26
+
+* added: web implementation of Configuration (configuration_html.dart)
+
 ## [0.2.1] - 2020.09.26
 
 * FileSync:
