@@ -1,6 +1,8 @@
 import 'dart:io';
+
 import 'package:dart_bones/dart_bones.dart';
 import 'package:test/test.dart';
+
 import 'asserts.dart';
 
 void main() {
@@ -9,18 +11,26 @@ void main() {
   FileSync.clearDirectory('/tmp/unittest');
   group('TempDir', () {
     test('tempFile', () {
-      var fn = FileSync.tempFile('abc.txt');
+      final fn = FileSync.tempFile('abc.txt');
       expect(fn, equals('/tmp/abc.txt'));
     });
     test('tempFile-subdir', () {
-      var fn = FileSync.tempFile('abc.txt', subDirs: 'unittest');
+      final fn = FileSync.tempFile('abc.txt', subDirs: 'unittest');
       expect(fn, equals('/tmp/unittest/abc.txt'));
       // expect(true, isDir('/tmp/unittest'));
     });
     test('tempFile-subdir2', () {
-      var fn = FileSync.tempFile('abc.txt', subDirs: 'unittest/dir1/dir2/');
+      final fn = FileSync.tempFile('abc.txt', subDirs: 'unittest/dir1/dir2');
       expect(fn, equals('/tmp/unittest/dir1/dir2/abc.txt'));
       // expect(true, isDir('/tmp/unittest/dir1/dir2'));
+    });
+    test('tempDirectory', () {
+      final dir1 =
+          FileSync.tempDirectory('abc.dir', subDirs: 'unittest/dir1/dir2');
+      expect(dir1.endsWith('unittest/dir1/dir2/abc.dir'), isTrue);
+      expect(FileSync.isDir(dir1), isTrue);
+      final dir2 = FileSync.tempDirectory('unittest2');
+      expect(FileSync.isDir(dir2), isTrue);
     });
   });
   group('rights', () {
@@ -70,6 +80,13 @@ void main() {
       final current = FileSync.fileAsString(fn);
       expect(current, equals(content));
     });
+    test('fileAsString-error', () {
+      final fn = FileSync.tempFile('example1.not.exists', subDirs: 'unittest');
+      final current = FileSync.fileAsString(fn);
+      expect(current.length, equals(0));
+      expect(logger.matches(r'cannot read.*example1.not.exists'), isTrue);
+    });
+
     test('fileAsList', () {
       final content = 'Whoop\nHave a nice day!';
       final fn = FileSync.tempFile('example.txt', subDirs: 'unittest');
@@ -77,11 +94,19 @@ void main() {
       final current = FileSync.fileAsList(fn);
       expect(current, equals(content.split('\n')));
     });
+    test('fileAsList-error', () {
+      final fn = FileSync.tempFile('example.not.exists', subDirs: 'unittest');
+      final current = FileSync.fileAsList(fn);
+      expect(current.length, equals(0));
+      expect(logger.matches(r'cannot read.*example.not.exists'), isTrue);
+    });
     test('toFile-date', () {
       final fn = FileSync.tempFile('example2.txt', subDirs: 'unittest');
       final date = StringUtils.stringToDateTime('2020.01.02-3:44');
       FileSync.toFile(fn, null, date: date);
-      expect(File(fn).statSync().modified, equals(date));
+      expect(File(fn)
+          .statSync()
+          .modified, equals(date));
     });
     test('toFile-dateasstring', () {
       final fn = FileSync.tempFile('example3.txt', subDirs: 'unittest');
@@ -193,7 +218,8 @@ void main() {
 3
 4''');
       expect(FileSync.tail(filename, 2).join('+'), equals('3+4'));
-      expect(FileSync.tail(filename, 3, reversed: true).join('+'), equals('4+3+2'));
+      expect(FileSync.tail(filename, 3, reversed: true).join('+'),
+          equals('4+3+2'));
     });
   });
   group('directory', () {
@@ -206,7 +232,8 @@ void main() {
       FileSync.ensureDirectory(dir);
       final filename = FileSync.joinPaths(dir, 'dummy.txt');
       FileSync.toFile(filename, '');
-      FileSync.ensureDirectory(dir, clear: true, owner: 33, group: 33, mode: 0777);
+      FileSync.ensureDirectory(dir,
+          clear: true, owner: 33, group: 33, mode: 0777);
       expect(false, isFile(filename));
     });
     test('ensureDirectory', () {
@@ -231,6 +258,38 @@ void main() {
       FileSync.ensureDoesNotExist(fn);
       expect(false, isFile(fn));
     });
+    test('ensureDoesNotExist-error', () {
+      final dir1 = FileSync.tempDirectory(
+          'unittest.trigger.ensureDoesNotExist.error',
+          subDirs: 'unittest');
+      try {
+        FileSync.ensureDoesNotExist(dir1);
+        expect(false, isTrue);
+      } on Exception catch (exc) {
+        final text = '$exc';
+        expect(
+            text.endsWith(
+                'unittest.trigger.ensureDoesNotExist.error already exists'),
+            isTrue);
+      }
+    });
+    test('ensureDoesNotExist-file-error', () {
+      final dir1 = FileSync.tempFile(
+          'unittest.trigger.ensureDoesNotExist.error',
+          subDirs: 'unittest');
+      FileSync.toFile(dir1, '');
+      try {
+        FileSync.ensureDoesNotExist(dir1);
+        expect(false, isTrue);
+      } on Exception catch (exc) {
+        final text = '$exc';
+        expect(
+            text.endsWith(
+                'unittest.trigger.ensureDoesNotExist.error already exists'),
+            isTrue);
+      }
+    });
+
     test('chdir', () {
       final current = Directory.current.path;
       FileSync.chdir('/etc');
@@ -240,9 +299,15 @@ void main() {
     test('chdir-error', () {
       final current = Directory.current.path;
       expect(FileSync.chdir('/not.realy.exists'), isFalse);
+      expect(FileSync.chdir('/not.realy.exists', ignoreErrors: true), isFalse);
       expect(FileSync.chdir('/etc/crontab'), isFalse);
       expect(Directory.current.path, equals(current));
       FileSync.chdir(current);
+      final dir1 = FileSync.tempFile('unittest.trigger.chdir.error',
+          subDirs: 'unittest');
+      FileSync.chdir(dir1);
+      expect(logger.matches(r'.*cannot chdir to.*unittest.trigger.chdir.error'),
+          isTrue);
     });
     test('chown', () {
       FileSync.chown('/tmp/not.exists', 33, group: 33);
@@ -279,9 +344,8 @@ void main() {
           isTrue);
       FileSync.createTree(base, ['onTemp']);
       final filename = FileSync.joinPaths(base, 'onTemp');
-      expect(
-          File(filename).existsSync(),
-          isTrue);
+      expect(File(filename).existsSync(), isTrue);
+      FileSync.createTree(null, ['onTemp']);
     });
 
     test('pushd', () {

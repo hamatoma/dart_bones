@@ -1,3 +1,14 @@
+## [0.2.1] - 2020.09.26
+
+* FileSync:
+** improved coverage
+** fix: ensureDoesNotExists: missing type
+** fix: joinPaths(): avoiding double sep ("//")
+** tempFile(): complexity reduced
+** new: tempDirectory()
+* StringUtils:
+** removed: chacheGlobalData() + cachePrivateData(): wrong place
+
 ## [0.2.0] - 2020.09.26
 
 * BaseConfiguration:

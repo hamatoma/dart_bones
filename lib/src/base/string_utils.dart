@@ -10,9 +10,7 @@ class OptionException implements Exception {
 /// Offers functions missed in String, e.g. some conversions.
 /// All methods are static and sync.
 class StringUtils {
-  static Configuration cacheGlobalData;
   static BaseLogger _logger;
-  static Configuration cachePrivateData;
 
   /// Tests whether the [argument] has the [longName] or the [shortName] and an boolean.
   /// Returns the value of the boolean argument.
@@ -263,14 +261,6 @@ class StringUtils {
     return rc;
   }
 
-  /// Returns a Configuration instance with data for more than one applications.
-  /// [logger] handles logging
-  static Configuration globalData(BaseLogger logger) {
-    cacheGlobalData =
-        cacheGlobalData ?? Configuration('/etc/buttshell', 'buttshell', logger);
-    return cacheGlobalData;
-  }
-
   /// Converts a glob [pattern] to a regular expression string.
   /// [pattern]: a string with wildcards '*' and '?' and char classes, e.g. [a-z0-9]'
   static String globPatternToRegExpression(String pattern) {
@@ -375,15 +365,6 @@ class StringUtils {
       }
     }
     return rc;
-  }
-
-  /// Returns a Configuration instance with private data.
-  /// This prevents storing private data like passwords in code.
-  /// [logger] handles logging
-  static Configuration privateData(BaseLogger logger) {
-    cachePrivateData =
-        cachePrivateData ?? Configuration('/etc/buttshell', 'private', logger);
-    return cachePrivateData;
   }
 
   /// Tests whether the [argument] has the [longName] or the [shortName] and a regular expression.

@@ -12,14 +12,14 @@ class FileSync {
 
   /// Changes the current directory to [path].
   /// Returns true on success.
-  static bool chdir(String path, {bool ignoreErrors=false}) {
+  static bool chdir(String path, {bool ignoreErrors = false}) {
     var rc = true;
     try {
       Directory.current = Directory(path);
     } catch (exc) {
       rc = false;
       if (!ignoreErrors) {
-        if (!isDir(path)) {
+        if (!isDir(path) && !path.endsWith('unittest.trigger.chdir.error')) {
           _logger?.error('cannot change to not existing directory $path');
         } else {
           _logger?.error('cannot chdir to $path: $exc');
@@ -53,7 +53,7 @@ class FileSync {
   /// Deletes all entries of a [path].
   /// [testSuccess] true: it will be tested whether the directory is really empty
   /// result: true: [path] is a directory. if [testSuccess]: the directory is empty
-  static bool clearDirectory(String path, {testSuccess=false}) {
+  static bool clearDirectory(String path, {testSuccess = false}) {
     final directory = Directory(path);
     var rc = directory.existsSync();
     if (rc) {
@@ -119,12 +119,13 @@ class FileSync {
   /// Removes a file/directory if it exists.
   /// [filename]: the full filename of the file/directory to remove
   /// [recursive]: true: remove the content of a directory too
-  static void ensureDoesNotExist(filename, {bool recursive = false}) {
+  static void ensureDoesNotExist(String filename, {bool recursive = false}) {
     if (FileSystemEntity.isDirectorySync(filename)) {
       _logger?.log('removing the directory $filename');
       final entry = Directory(filename);
       entry.deleteSync(recursive: recursive);
-      if (entry.existsSync()) {
+      if (entry.existsSync() ||
+          filename.endsWith('unittest.trigger.ensureDoesNotExist.error')) {
         throw Exception('directory $filename already exists');
       }
     } else if (isLink(filename)) {
@@ -132,7 +133,8 @@ class FileSync {
     } else if (isFile(filename)) {
       _logger?.log('removing the file $filename');
       File(filename).deleteSync();
-      if (isFile(filename)) {
+      if (isFile(filename) ||
+          filename.endsWith('unittest.trigger.ensureDoesNotExist.error')) {
         throw Exception('file $filename already exists');
       }
     }
@@ -268,6 +270,7 @@ class FileSync {
   /// [third]: third part
   static String joinPaths(String first, String second, [String third]) {
     final rc = StringBuffer(first);
+    var last = first;
     if (second.isNotEmpty) {
       if (!first.endsWith(sep)) {
         rc.write(sep);
@@ -279,9 +282,10 @@ class FileSync {
       } else {
         rc.write(second);
       }
+      last = second;
     }
     if (third != null && third.isNotEmpty) {
-      if (!first.endsWith(sep)) {
+      if (!last.endsWith(sep)) {
         rc.write(sep);
       }
       if (third.startsWith(currentDirSep)) {
@@ -370,7 +374,7 @@ class FileSync {
     //   }
     // }
     rc = fileAsList(filename);
-    if (rc.length > count){
+    if (rc.length > count) {
       rc.removeRange(0, rc.length - count);
     }
     if (reversed) {
@@ -387,30 +391,37 @@ class FileSync {
   /// node is laying inside [subDirs]
   static String tempFile(String node,
       {BaseLogger logger, String subDirs, String extension}) {
-    var rc = tempDir + sep;
-    if (subDirs != null) {
-      if (subDirs.startsWith('/')) {
-        subDirs = subDirs.substring(0, subDirs.length - 1);
-      }
-      if (!Platform.isLinux) {
-        subDirs = subDirs.replaceAll('/', sep);
-      }
-      rc += subDirs;
-      ensureDirectory(rc);
-      if (!rc.endsWith(sep)) {
-        rc += sep;
-      }
-    }
+    final baseDir = subDirs == null ? tempDir : joinPaths(tempDir, subDirs);
+    ensureDirectory(baseDir);
+    var rc = baseDir.endsWith(sep) ? baseDir : baseDir + sep;
     if (!node.endsWith('*')) {
       rc += node;
     } else {
       rc += node.substring(0, node.length - 1) +
           '.' +
-          DateTime.now().millisecondsSinceEpoch.toString();
+          DateTime
+              .now()
+              .millisecondsSinceEpoch
+              .toString();
     }
     if (extension != null) {
       rc += extension;
     }
+    return rc;
+  }
+
+  /// Returns the name of a directory inside the temp directory.
+  /// The directory will be created if it does not exist.
+  /// [node]: name of the directory
+  /// [logger]: if given the creation of directory will be logged
+  /// [subDirs]: if given: one or more nested directories, e.g. 'unittest/mytest'
+  /// node is laying inside [subDirs]
+  static String tempDirectory(String node,
+      {BaseLogger logger, String subDirs, String extension}) {
+    var rc = subDirs == null
+        ? joinPaths(tempDir, node)
+        : joinPaths(tempDir, subDirs, node);
+    ensureDirectory(rc);
     return rc;
   }
 

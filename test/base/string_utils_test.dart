@@ -277,6 +277,7 @@ void main() {
           StringUtils.replacePlaceholders(
               '!user: id: !{id}', map, rexprVariable),
           equals('adam: id: 33'));
+      logger.log('expecting error "unknown plaseholder"...', LEVEL_SUMMERY);
       expect(
           StringUtils.replacePlaceholders(
               '123!user.!{user}: id: !{id}!id.rest', map, rexprVariable),
@@ -290,14 +291,6 @@ void main() {
   group('query', () {
     test('countChar', () {
       expect(StringUtils.countChar('a+b+c', '+'), equals(2));
-    });
-  });
-  group('mixed', () {
-    test('globalData', () {
-      expect(StringUtils.globalData(logger) != null, isTrue);
-    });
-    test('privateData', () {
-      expect(StringUtils.privateData(logger) != null, isTrue);
     });
   });
 }
