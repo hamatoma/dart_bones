@@ -1,5 +1,5 @@
-import 'package:meta/meta.dart';
 import 'package:dart_bones/dart_bones.dart';
+import 'package:meta/meta.dart';
 
 /// Implements static functions for files and directories in the sync variant.
 class BaseConfiguration {
@@ -37,6 +37,21 @@ class BaseConfiguration {
         defaultValue: defaultValue == null ? null : defaultValue.toString());
     if (value != null) {
       rc = int.parse(value);
+    }
+    return rc;
+  }
+
+  /// Returns a float value given by [section] and [key].
+  /// [key]: the key of the (key value) pair
+  /// [section]: if given the (key value) pair is searched in this section
+  /// [defaultValue]: if the key does not exists this value is returned
+  double asFloat(String key, {String section, double defaultValue}) {
+    var rc = defaultValue;
+    final value = asString(key,
+        section: section,
+        defaultValue: defaultValue == null ? null : defaultValue.toString());
+    if (value != null) {
+      rc = double.parse(value);
     }
     return rc;
   }

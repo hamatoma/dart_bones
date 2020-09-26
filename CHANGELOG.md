@@ -1,3 +1,18 @@
-## [0.0.1] - TODO: Add release date.
+## [0.2.0] - 2020.09.26
 
-* TODO: Describe initial release.
+* BaseConfiguration:
+** new: asFloat(): returns a float value from the configuration
+** test coverage configuration_test: 100%
+* FileSync:
+** fix: _logger may be null: _logger.<method> changed to _logger?.<method>
+
+## [0.1.0] - 2020.09.25
+
+* first implementation, no dart analyzing warnings, coverage > 90%
+* V0.2.1 BaseConfiguration, fix in FileSync
+
+## [0.0.1] - 2020.09.25
+
+* Creation on GitHub
+
+

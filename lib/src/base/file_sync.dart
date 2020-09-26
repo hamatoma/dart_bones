@@ -20,9 +20,9 @@ class FileSync {
       rc = false;
       if (!ignoreErrors) {
         if (!isDir(path)) {
-          _logger.error('cannot change to not existing directory $path');
+          _logger?.error('cannot change to not existing directory $path');
         } else {
-          _logger.error('cannot chdir to $path: $exc');
+          _logger?.error('cannot chdir to $path: $exc');
         }
       }
     }
@@ -35,7 +35,7 @@ class FileSync {
       sprintf('0%o', [mode]),
       filename
     ];
-    _logger.log('chmod ' + args.join(' '), LEVEL_DETAIL);
+    _logger?.log('chmod ' + args.join(' '), LEVEL_DETAIL);
     Process.runSync('/bin/chmod', args);
   }
 
@@ -46,7 +46,7 @@ class FileSync {
       user += ':$group';
     }
     final args = [user, filename];
-    _logger.log('chown ' + args.join(' '), LEVEL_DETAIL);
+    _logger?.log('chown ' + args.join(' '), LEVEL_DETAIL);
     Process.runSync('/bin/chown', args);
   }
 
@@ -102,7 +102,7 @@ class FileSync {
       {int mode, int owner, int group, bool clear = false}) {
     final dir = Directory(path);
     if (!dir.existsSync()) {
-      _logger.log('creating $path');
+      _logger?.log('creating $path');
       dir.createSync(recursive: true);
     } else if (clear) {
       clearDirectory(path);
@@ -121,7 +121,7 @@ class FileSync {
   /// [recursive]: true: remove the content of a directory too
   static void ensureDoesNotExist(filename, {bool recursive = false}) {
     if (FileSystemEntity.isDirectorySync(filename)) {
-      _logger.log('removing the directory $filename');
+      _logger?.log('removing the directory $filename');
       final entry = Directory(filename);
       entry.deleteSync(recursive: recursive);
       if (entry.existsSync()) {
@@ -130,7 +130,7 @@ class FileSync {
     } else if (isLink(filename)) {
       Link(filename).deleteSync();
     } else if (isFile(filename)) {
-      _logger.log('removing the file $filename');
+      _logger?.log('removing the file $filename');
       File(filename).deleteSync();
       if (isFile(filename)) {
         throw Exception('file $filename already exists');
@@ -172,7 +172,7 @@ class FileSync {
     try {
       content = file.readAsLinesSync();
     } on Exception catch (exc, stack) {
-      _logger.error('cannot read $filename: ${exc.toString()}',
+      _logger?.error('cannot read $filename: ${exc.toString()}',
           stackTrace: stack);
     }
     return content;
@@ -185,7 +185,7 @@ class FileSync {
     try {
       content = file.readAsStringSync();
     } on Exception catch (exc, stack) {
-      _logger.error('cannot read $filename: ${exc.toString()}',
+      _logger?.error('cannot read $filename: ${exc.toString()}',
           stackTrace: stack);
     }
     return content;
@@ -439,13 +439,13 @@ class FileSync {
         file.writeAsStringSync(content, flush: true);
       } on FileSystemException catch (exc) {
         if (!createDirectory) {
-          _logger.error('$exc');
+          _logger?.error('$exc');
         } else {
           final parent = parentOf(filename);
           if (!Directory(parent).existsSync()) {
             ensureDirectory(parent);
           } else {
-            _logger.error('$exc');
+            _logger?.error('$exc');
           }
         }
       }
@@ -464,14 +464,14 @@ class FileSync {
         try {
           file2.deleteSync();
         } catch (e) {
-          _logger.error('cannot remove $filename');
+          _logger?.error('cannot remove $filename');
         }
       }
       try {
-        _logger.log('renaming $target -> $filename', LEVEL_FINE);
+        _logger?.log('renaming $target -> $filename', LEVEL_FINE);
         File(target).renameSync(filename);
       } catch (e) {
-        _logger.error('cannot rename $target => $filename');
+        _logger?.error('cannot rename $target => $filename');
       }
     }
     if (dateAsString != null) {

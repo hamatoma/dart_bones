@@ -49,6 +49,16 @@ void main() {
       expect(config.asBool('relational'), isFalse);
       expect(config.asBool('ignore', section: 'db'), isFalse);
       expect(config.asBool('relational', section: 'db'), isTrue);
+      expect(config.asBool('unknown'), isFalse);
+      expect(config.asBool('unknown', section: 'db'), isFalse);
+    });
+    test('asFloat', () {
+      expect(config.asFloat('width'), equals(33.5));
+      expect(config.asFloat('height', defaultValue: 22.5), equals(22.5));
+      expect(config.asFloat('size', section: 'widget'), equals(10.0));
+      expect(config.asFloat('height2', section: 'widget', defaultValue: -2.0),
+          equals(-2.0));
+      expect(config.asFloat('height', section: 'widget'), equals(33.5));
     });
   });
   group('constructors', () {
@@ -88,6 +98,10 @@ name: "Jonny Doo"
 port: 44
 ignore: true
 relational: false
+width: 33.5
+widget:
+  size: 10
+  height: 33.5
 db:
   name: doodle
   port: 22033
