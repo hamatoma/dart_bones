@@ -218,28 +218,20 @@ void main() {
         StringUtils.patternOption('exclude', 'x', r'--exclude=(.*\.log');
         expect('OptionException', equals(''));
       } on OptionException catch (exc) {
-        expect(
-            exc.cause,
-            startsWith(
-                'syntax error (reg. expression) in --exclude='));
+        expect(exc.cause,
+            startsWith('syntax error (reg. expression) in --exclude='));
       }
       try {
         StringUtils.patternOption('exclude', 'x', r'--exclude=');
         expect('OptionException', equals(''));
       } on OptionException catch (exc) {
-        expect(
-            exc.cause,
-            equals(
-                'missing =<pattern> in --exclude='));
+        expect(exc.cause, equals('missing =<pattern> in --exclude='));
       }
       try {
         StringUtils.patternOption('exclude', 'x', r'--exclude=|)');
         expect('OptionException', equals(''));
       } on OptionException catch (exc) {
-        expect(
-            exc.cause,
-            startsWith(
-                'syntax error (reg. expression) in '));
+        expect(exc.cause, startsWith('syntax error (reg. expression) in '));
       }
     });
     test('stringOption', () {
@@ -348,6 +340,22 @@ void main() {
       expect(
           StringUtils.limitString('abc123', 5, ellipsis: '*'), equals('abc1*'));
     });
+    test('stringToEnum', () {
+      expect(StringUtils.stringToEnum<BlaBla>('aa', BlaBla.values),
+          equals(BlaBla.aa));
+      expect(StringUtils.stringToEnum<BlaBla>('bb', BlaBla.values),
+          equals(BlaBla.bb));
+      expect(StringUtils.stringToEnum<BlaBla>('cc', BlaBla.values),
+          equals(BlaBla.cc));
+      expect(StringUtils.stringToEnum('', BlaBla.values), isNull);
+      expect(StringUtils.stringToEnum('a', BlaBla.values), isNull);
+      expect(StringUtils.stringToEnum(null, BlaBla.values), isNull);
+    });
+    test('enumToString', () {
+      expect(StringUtils.enumToString(BlaBla.aa), equals('aa'));
+      expect(StringUtils.enumToString(BlaBla.bb), equals('bb'));
+      expect(StringUtils.enumToString(BlaBla.cc), equals('cc'));
+    });
   });
   group('replace', () {
     test('replacePlaceholders', () {
@@ -374,3 +382,4 @@ void main() {
     });
   });
 }
+enum BlaBla { aa, bb, cc }

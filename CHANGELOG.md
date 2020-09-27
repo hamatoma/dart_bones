@@ -1,3 +1,8 @@
+## [0.2.4] - 2020.09.27
+
+* StringUtils: 
+** new: enumToString(), stringToEnum()
+
 ## [0.2.3] - 2020.09.27
 
 * StringUtils:

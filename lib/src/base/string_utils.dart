@@ -22,6 +22,24 @@ class StringUtils {
       RegExp(r'^[+-]?(?:(?:0[xX]([\da-fA-F]+))|(?:0[oO]([0-7]+))|(\d+))$');
 
   // ......................................a..b.......1...........1b.c.......2......2c.3...3a
+  /// Converts an [enumValue] to a string.
+  static String enumToString(Object enumValue) =>
+      enumValue.toString().split('.').last;
+
+  /// Converts a [text] into an integer.
+  /// [defaultValue] is the return value if [text] is not an integer
+  static double asFloat(String text, {double defaultValue}) {
+    var rc = defaultValue;
+    if (text != null && text.isNotEmpty) {
+      try {
+        rc = double.parse(text);
+      } on FormatException {
+        // nothing to do
+      }
+    }
+    return rc;
+  }
+
   /// Converts a [text] into an integer.
   /// [defaultValue] is the return value if [text] is not an integer
   static int asInt(String text, {int defaultValue}) {
@@ -40,20 +58,6 @@ class StringUtils {
         if (negate) {
           rc = -rc;
         }
-      }
-    }
-    return rc;
-  }
-
-  /// Converts a [text] into an integer.
-  /// [defaultValue] is the return value if [text] is not an integer
-  static double asFloat(String text, {double defaultValue}) {
-    var rc = defaultValue;
-    if (text != null && text.isNotEmpty) {
-      try {
-        rc = double.parse(text);
-      } on FormatException {
-        // nothing to do
       }
     }
     return rc;
@@ -515,11 +519,25 @@ class StringUtils {
     }
     final val = matcher.group(1);
     year = val == null || val == ''
-        ? DateTime.now().year
+        ? DateTime
+        .now()
+        .year
         : int.parse(matcher.group(1));
     month = int.parse(matcher.group(2));
     day = int.parse(matcher.group(3));
     var rc = DateTime(year, month, day, hour, minute, second);
+    return rc;
+  }
+
+  /// Converts a [text] into an enum value.
+  /// Returns null if [text] is not valid.
+  static T stringToEnum<T>(String text, List<T> values) {
+    T rc;
+    if (text != null && text.isNotEmpty) {
+      final suffix = '.' + text;
+      rc = values.firstWhere((e) => e.toString().endsWith(suffix),
+          orElse: () => null);
+    }
     return rc;
   }
 }
