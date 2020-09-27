@@ -2,17 +2,19 @@ import 'package:dart_bones/dart_bones.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('String', () {
+  group('real world types', () {
     test('isPhoneNumber', () {
-      expect(true, equals(Validation.isPhoneNumber('089-1234567')));
-      expect(true, equals(Validation.isPhoneNumber('+49-89-1234567')));
-      expect(true, equals(Validation.isPhoneNumber('+49-89-12 34 567')));
-      expect(true, equals(Validation.isPhoneNumber('0891234567')));
-      expect(false, equals(Validation.isPhoneNumber('+089+1234567')));
-      expect(false, equals(Validation.isPhoneNumber('0 bock')));
+      expect((Validation.isPhoneNumber('089-1234567')), isTrue);
+      expect((Validation.isPhoneNumber('+49-89-1234567')), isTrue);
+      expect((Validation.isPhoneNumber('+49-89-12 34 567')), isTrue);
+      expect((Validation.isPhoneNumber('0891234567')), isTrue);
+      expect((Validation.isPhoneNumber('+089+1234567')), isFalse);
+      expect((Validation.isPhoneNumber('0 bock')), isFalse);
+      expect((Validation.isPhoneNumber('')), isFalse);
+      expect((Validation.isPhoneNumber(null)), isFalse);
     });
     test('isEmail', () {
-      expect(true, equals(Validation.isEmail('jonny@example.com')));
+      expect((Validation.isEmail('jonny@example.com')), isTrue);
       expect(
           true,
           equals(Validation.isEmail(
@@ -22,10 +24,87 @@ void main() {
           equals(Validation.isEmail(
               'ABCDEFGHIJKLMNOPQRSTUVWXYZ@SV-0.EXAMPLE.COM')));
       expect(
-          true, equals(Validation.isEmail(r'0123456789.!#$%&*+/=?^_`{|}~-@SV-0.EXAMPLE.COM')));
-      expect(false, equals(Validation.isEmail('@SV-0.EXAMPLE.COM')));
-      expect(false, equals(Validation.isEmail('@example.com')));
-      expect(false, equals(Validation.isEmail('<>@example.com')));
+          (Validation.isEmail(
+              r'0123456789.!#$%&*+/=?^_`{|}~-@SV-0.EXAMPLE.COM')),
+          isTrue);
+      expect((Validation.isEmail('@SV-0.EXAMPLE.COM')), isFalse);
+      expect((Validation.isEmail('@example.com')), isFalse);
+      expect((Validation.isEmail('<>@example.com')), isFalse);
+      expect((Validation.isEmail('')), isFalse);
+      expect((Validation.isEmail(null)), isFalse);
+    });
+  });
+  group('data types', () {
+    test('isBool', () {
+      expect((Validation.isBool('True')), isTrue);
+      expect((Validation.isBool('true')), isTrue);
+      expect((Validation.isBool('False')), isTrue);
+      expect((Validation.isBool('yes')), isTrue);
+      expect((Validation.isBool('NO')), isTrue);
+      expect((Validation.isBool('t')), isTrue);
+      expect((Validation.isBool('F')), isTrue);
+      expect((Validation.isBool('wrong')), isFalse);
+      expect((Validation.isBool('')), isFalse);
+      expect((Validation.isBool(null)), isFalse);
+    });
+  });
+  group('numbers', () {
+    test('isNat', () {
+      expect(Validation.isNat('0'), isTrue);
+      expect(Validation.isNat('1234567890'), isTrue);
+      expect(Validation.isNat('0xabcdef01234567890'), isTrue);
+      expect(Validation.isNat('0XABCDEF01234567890'), isTrue);
+      expect(Validation.isNat('0o12345670'), isTrue);
+      expect(Validation.isNat('0O12345670'), isTrue);
+      expect(Validation.isNat('O'), isFalse);
+      expect(Validation.isNat('a'), isFalse);
+      expect(Validation.isNat('a0'), isFalse);
+      expect(Validation.isNat('0a'), isFalse);
+      expect(Validation.isNat('123456A7890'), isFalse);
+      expect(Validation.isNat('xaffe01234567890'), isFalse);
+      expect(Validation.isNat('0XAFFEG01234567890'), isFalse);
+      expect(Validation.isNat('0o8'), isFalse);
+      expect(Validation.isNat(''), isFalse);
+      expect(Validation.isNat(null), isFalse);
+    });
+    test('isInt', () {
+      expect(Validation.isInt('0'), isTrue);
+      expect(Validation.isInt('1234567890'), isTrue);
+      expect(Validation.isInt('-1234567890'), isTrue);
+      expect(Validation.isInt('+1234567890'), isTrue);
+      expect(Validation.isInt('0xabcdef01234567890'), isTrue);
+      expect(Validation.isInt('0XABCDEF01234567890'), isTrue);
+      expect(Validation.isInt('-0XABCDEF01234567890'), isTrue);
+      expect(Validation.isInt('+0XABCDEF01234567890'), isTrue);
+      expect(Validation.isInt('0o12345670'), isTrue);
+      expect(Validation.isInt('-0o12345670'), isTrue);
+      expect(Validation.isInt('+0o12345670'), isTrue);
+      expect(Validation.isInt('0O12345670'), isTrue);
+      expect(Validation.isInt('O'), isFalse);
+      expect(Validation.isInt('a'), isFalse);
+      expect(Validation.isInt('a0'), isFalse);
+      expect(Validation.isInt('0a'), isFalse);
+      expect(Validation.isInt('123456A7890'), isFalse);
+      expect(Validation.isInt('xaffe01234567890'), isFalse);
+      expect(Validation.isInt('0XAFFEG01234567890'), isFalse);
+      expect(Validation.isInt('0o8'), isFalse);
+      expect(Validation.isInt(''), isFalse);
+      expect(Validation.isInt(null), isFalse);
+    });
+    test('isFloat', () {
+      expect(Validation.isFloat('0'), isTrue);
+      expect(Validation.isFloat('1234'), isTrue);
+      expect(Validation.isFloat('-1234'), isTrue);
+      expect(Validation.isFloat('+1234'), isTrue);
+      expect(Validation.isFloat('1234.12'), isTrue);
+      expect(Validation.isFloat('+1234.12'), isTrue);
+      expect(Validation.isFloat('-1234.12'), isTrue);
+      expect(Validation.isFloat('1234.12E+6'), isTrue);
+      expect(Validation.isFloat('-1234.12E-6'), isTrue);
+      expect(Validation.isFloat('12.7a'), isFalse);
+      expect(Validation.isFloat('/12.7'), isFalse);
+      expect(Validation.isFloat(''), isFalse);
+      expect(Validation.isFloat(null), isFalse);
     });
   });
 }

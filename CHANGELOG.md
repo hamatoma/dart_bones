@@ -1,3 +1,12 @@
+## [0.2.3] - 2020.09.27
+
+* StringUtils:
+** new: asInt(), asFloat()
+** fix: regExpOption(): check of empty option
+** coverage 100%
+* Validation
+** new isBool(), isInt(), isNat(), isFloat()
+
 ## [0.2.2] - 2020.09.26
 
 * added: web implementation of Configuration (configuration_html.dart)

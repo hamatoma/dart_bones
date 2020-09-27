@@ -114,6 +114,12 @@ void main() {
             equals(
                 'wrong syntax (<count>[<unit>]) in -m5Mby: examples: 1234321 3G 2TByte 200ki 128mbyte'));
       }
+      try {
+        StringUtils.byteOption('max', 'm', '--max');
+        expect('OptionException', equals(''));
+      } on OptionException catch (exc) {
+        expect(exc.cause, equals('missing =<count><unit> in --max'));
+      }
     });
     test('dateOption', () {
       final currentYear = DateTime.now().year;
@@ -133,6 +139,12 @@ void main() {
       } on OptionException catch (exc) {
         expect(exc.cause,
             equals('Invalid argument(s): not a date or date time: 22'));
+      }
+      try {
+        StringUtils.dateOption('max', 'm', '--max');
+        expect('OptionException', equals(''));
+      } on OptionException catch (exc) {
+        expect(exc.cause, equals('missing =<reg-expr> in --max'));
       }
     });
     test('intOption', () {
@@ -155,6 +167,12 @@ void main() {
       } on OptionException catch (exc) {
         expect(exc.cause, equals('missing <int> in --verbose-level=3x'));
       }
+      try {
+        StringUtils.intOption('verbose-level', 'v', '--verbose-level', -1);
+        expect('OptionException', equals(''));
+      } on OptionException catch (exc) {
+        expect(exc.cause, equals('missing "<int>" in --verbose-level'));
+      }
     });
     test('regExpOption', () {
       expect(StringUtils.regExpOption('exclude', 'x', r'-x.*~$||i').toString(),
@@ -174,6 +192,12 @@ void main() {
             equals(
                 'syntax error (reg. expression) in --exclude=(.*\\.log: FormatException: Unterminated group(.*\\.log'));
       }
+      try {
+        StringUtils.regExpOption('exclude', 'x', r'--exclude=');
+        expect('OptionException', equals(''));
+      } on OptionException catch (exc) {
+        expect(exc.cause, equals('missing =<reg-expr> in --exclude='));
+      }
     });
     test('patternOption', () {
       expect(
@@ -191,13 +215,31 @@ void main() {
     });
     test('patternOption-error', () {
       try {
-        StringUtils.regExpOption('exclude', 'x', r'--exclude=(.*\.log');
+        StringUtils.patternOption('exclude', 'x', r'--exclude=(.*\.log');
+        expect('OptionException', equals(''));
+      } on OptionException catch (exc) {
+        expect(
+            exc.cause,
+            startsWith(
+                'syntax error (reg. expression) in --exclude='));
+      }
+      try {
+        StringUtils.patternOption('exclude', 'x', r'--exclude=');
         expect('OptionException', equals(''));
       } on OptionException catch (exc) {
         expect(
             exc.cause,
             equals(
-                'syntax error (reg. expression) in --exclude=(.*\\.log: FormatException: Unterminated group(.*\\.log'));
+                'missing =<pattern> in --exclude='));
+      }
+      try {
+        StringUtils.patternOption('exclude', 'x', r'--exclude=|)');
+        expect('OptionException', equals(''));
+      } on OptionException catch (exc) {
+        expect(
+            exc.cause,
+            startsWith(
+                'syntax error (reg. expression) in '));
       }
     });
     test('stringOption', () {
@@ -248,6 +290,44 @@ void main() {
       expect(StringUtils.decimalToInt('x4711', 1, length, 3), equals(47));
       expect(length[0], equals(2));
       expect(StringUtils.decimalToInt('x4711', 2, null, 3), equals(7));
+    });
+    test('asInt', () {
+      expect(StringUtils.asInt('x12y', defaultValue: -1), equals(-1));
+      expect(StringUtils.asInt('0'), equals(0));
+      expect(StringUtils.asInt('0', defaultValue: -1), equals(0));
+      expect(StringUtils.asInt('12345678', defaultValue: -1), equals(12345678));
+      expect(StringUtils.asInt('90'), equals(90));
+      expect(StringUtils.asInt('+90'), equals(90));
+      expect(StringUtils.asInt('-90'), equals(-90));
+      expect(StringUtils.asInt('0xabcdef'), equals(0xabcdef));
+      expect(StringUtils.asInt('0XABCDEF'), equals(0xabcdef));
+      expect(StringUtils.asInt('0X01234'), equals(0X01234));
+      expect(StringUtils.asInt('-0X01234'), equals(0X01234));
+      expect(StringUtils.asInt('+0X01234'), equals(0X01234));
+      expect(StringUtils.asInt('0x56789a'), equals(0x56789a));
+      expect(StringUtils.asInt('0o567'), equals(375));
+      expect(StringUtils.asInt('0O12345'), equals(5349));
+      expect(StringUtils.asInt('-0O12345'), equals(-5349));
+      expect(StringUtils.asInt('+0O12345'), equals(5349));
+      expect(StringUtils.asInt('', defaultValue: -1), equals(-1));
+      expect(StringUtils.asInt(null, defaultValue: -2), equals(-2));
+      expect(StringUtils.asInt('0x', defaultValue: -2), equals(-2));
+      expect(StringUtils.asInt('0o', defaultValue: -2), equals(-2));
+      expect(StringUtils.asInt(' 1 ', defaultValue: -2), equals(-2));
+      expect(StringUtils.asInt(' 1', defaultValue: -2), equals(-2));
+      expect(StringUtils.asInt('1 ', defaultValue: -2), equals(-2));
+    });
+    test('asFloat', () {
+      expect(StringUtils.asFloat('7'), equals(7.0));
+      expect(StringUtils.asFloat('7', defaultValue: -1), equals(7.0));
+      expect(StringUtils.asFloat('0.23'), equals(0.23));
+      expect(StringUtils.asFloat('-0.23'), equals(-0.23));
+      expect(StringUtils.asFloat('+0.23'), equals(0.23));
+      expect(StringUtils.asFloat('+0.23E-2'), equals(0.23E-2));
+      expect(StringUtils.asFloat('-0.23E+3'), equals(-0.23E+3));
+      expect(StringUtils.asFloat('', defaultValue: -99.0), equals(-99.0));
+      expect(StringUtils.asFloat(null, defaultValue: -99.0), equals(-99.0));
+      expect(StringUtils.asFloat('a', defaultValue: -99.0), equals(-99.0));
     });
     test('decodeUtf8HmDu', () {
       expect(StringUtils.decodeUtf8HmDu('x'), equals('x'));

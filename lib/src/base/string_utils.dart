@@ -12,6 +12,53 @@ class OptionException implements Exception {
 class StringUtils {
   static BaseLogger _logger;
 
+  static RegExp _regExpUtfPattern;
+  static final regExprDate1 = RegExp(r'^(?:(\d\d\d\d)\.)?(\d\d?)\.(\d\d?)$');
+  static final regExprDateTime2 = RegExp(
+      r'^(?:(\d\d\d\d)\.)?(\d\d?)\.(\d\d?)-(\d\d?):(\d\d?)(?::(\d+\d))?$');
+
+  // ....a..1........1..a.2.....2..3.....3.4.....4.5.....5b...6.....6b
+  static final regExprInt =
+      RegExp(r'^[+-]?(?:(?:0[xX]([\da-fA-F]+))|(?:0[oO]([0-7]+))|(\d+))$');
+
+  // ......................................a..b.......1...........1b.c.......2......2c.3...3a
+  /// Converts a [text] into an integer.
+  /// [defaultValue] is the return value if [text] is not an integer
+  static int asInt(String text, {int defaultValue}) {
+    var rc = defaultValue;
+    if (text != null && text.isNotEmpty) {
+      final match = regExprInt.firstMatch(text);
+      if (match != null) {
+        var negate = text.startsWith('-');
+        if (match.groupCount >= 3 && match.group(3) != null) {
+          rc = int.parse(match.group(3));
+        } else if (match.groupCount >= 2 && match.group(2) != null) {
+          rc = int.parse(match.group(2), radix: 8);
+        } else {
+          rc = int.parse(text);
+        }
+        if (negate) {
+          rc = -rc;
+        }
+      }
+    }
+    return rc;
+  }
+
+  /// Converts a [text] into an integer.
+  /// [defaultValue] is the return value if [text] is not an integer
+  static double asFloat(String text, {double defaultValue}) {
+    var rc = defaultValue;
+    if (text != null && text.isNotEmpty) {
+      try {
+        rc = double.parse(text);
+      } on FormatException {
+        // nothing to do
+      }
+    }
+    return rc;
+  }
+
   /// Tests whether the [argument] has the [longName] or the [shortName] and an boolean.
   /// Returns the value of the boolean argument.
   /// Throws OptionException on error.
@@ -187,7 +234,30 @@ class StringUtils {
     return rc.toString();
   }
 
-  static RegExp _regExpUtfPattern;
+  /// Returns the int value of a decimal number in a [text] starting at index [start].
+  /// [text]: the string to inspect
+  /// [length]: OUT: if not null: the count of digits will be stored in length[0]
+  /// [last]: if not null: the number detection ends with this index (excluding)
+  static int decimalToInt(String text, int start,
+      [List<int> length, int last]) {
+    var rc = 0;
+    last ??= text.length;
+    int digit;
+    var len = 0;
+    while (start < text.length && start < last) {
+      if ((digit = text.codeUnitAt(start)) >= 0x30 && digit <= 0x39) {
+        rc = rc * 10 + (digit - 0x30);
+        ++len;
+      } else {
+        break;
+      }
+      ++start;
+    }
+    if (length != null) {
+      length[0] = len;
+    }
+    return rc;
+  }
 
   /// Convert specially UTF-8 encoded non ASCII characters into real UTF-8.
   /// hmdu is a program which encodes "more byte" UTF-8 characters into the
@@ -234,31 +304,6 @@ class StringUtils {
       }
     }
     return rc ?? input;
-  }
-
-  /// Returns the int value of a decimal number in a [text] starting at index [start].
-  /// [text]: the string to inspect
-  /// [length]: OUT: if not null: the count of digits will be stored in length[0]
-  /// [last]: if not null: the number detection ends with this index (excluding)
-  static int decimalToInt(String text, int start,
-      [List<int> length, int last]) {
-    var rc = 0;
-    last ??= text.length;
-    int digit;
-    var len = 0;
-    while (start < text.length && start < last) {
-      if ((digit = text.codeUnitAt(start)) >= 0x30 && digit <= 0x39) {
-        rc = rc * 10 + (digit - 0x30);
-        ++len;
-      } else {
-        break;
-      }
-      ++start;
-    }
-    if (length != null) {
-      length[0] = len;
-    }
-    return rc;
   }
 
   /// Converts a glob [pattern] to a regular expression string.
@@ -339,8 +384,8 @@ class StringUtils {
       String longName, String shortName, String argument) {
     RegExp rc;
     String pattern;
-    if (argument == '--$longName') {
-      throw OptionException('missing =<reg-expr> in $argument');
+    if (argument == '--$longName' || argument == '--$longName=') {
+      throw OptionException('missing =<pattern> in $argument');
     } else if (argument.startsWith('--$longName=')) {
       pattern = argument.substring(longName.length + 3);
     } else if (shortName != null && argument.startsWith('-$shortName')) {
@@ -377,7 +422,7 @@ class StringUtils {
       String longName, String shortName, String argument) {
     RegExp rc;
     String pattern;
-    if (argument == '--$longName') {
+    if (argument == '--$longName' || argument == '--$longName=') {
       throw OptionException('missing =<reg-expr> in $argument');
     } else if (argument.startsWith('--$longName=')) {
       pattern = argument.substring(longName.length + 3);
@@ -413,13 +458,16 @@ class StringUtils {
       final name = matcher.group(1);
       if (!variables.containsKey(name)) {
         _logger?.error(
-            'replaceVariables(): unknown placeholder $name in ${StringUtils.limitString(input, 40)}');
+            'replaceVariables(): unknown placeholder $name in ${StringUtils
+                .limitString(input, 40)}');
       } else {
         rc = rc.replaceAll(matcher.group(0), variables[name]);
       }
     }
     return rc;
   }
+
+  static void setLogger(BaseLogger logger) => _logger = logger;
 
   /// Tests whether the [argument] has the [longName] or the [shortName] and a string.
   /// Returns the value of the string argument or null.
@@ -444,8 +492,6 @@ class StringUtils {
     return rc;
   }
 
-  static void setLogger(BaseLogger logger) => _logger = logger;
-
   /// Converts the string [dateString] into a DateTime instance.
   /// Throws ArgumentsError on syntax error(s).
   static DateTime stringToDateTime(String dateString) {
@@ -453,13 +499,9 @@ class StringUtils {
     int year, month, day;
     var minute = 0, hour = 0, second = 0;
     if (!dateString.contains('-')) {
-      matcher =
-          RegExp(r'^(?:(\d\d\d\d)\.)?(\d\d?)\.(\d\d?)$').firstMatch(dateString);
+      matcher = regExprDate1.firstMatch(dateString);
     } else {
-      matcher = RegExp(
-              r'^(?:(\d\d\d\d)\.)?(\d\d?)\.(\d\d?)-(\d\d?):(\d\d?)(?::(\d+\d))?$')
-          // ....a..1........1..a.2.....2..3.....3.4.....4.5.....5b...6.....6b
-          .firstMatch(dateString);
+      matcher = regExprDateTime2.firstMatch(dateString);
       if (matcher != null) {
         hour = int.parse(matcher.group(4));
         minute = int.parse(matcher.group(5));
