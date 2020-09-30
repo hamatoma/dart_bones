@@ -7,10 +7,8 @@ class ProcessSync {
   /// Executes some [commands] given as lines of a string as shell script.
   /// Creates a shell script with the [commands] and executes this script.
   /// [commands]: one or more external program calls, separated by '\n'
-  /// [inputFile]: null or a file which is piped to stdin of the script
-  /// [outputFile]: null or a file which is piped to stdout of the script
-  /// [workingDirectory]: null or the working directory while processing the [command]
-  /// [environment]: null: use the environment of the runtime. Otherwise the environment of the [command]
+  /// [workingDirectory]: null or the working directory while processing the [commands]
+  /// [environment]: null: use the environment of the runtime. Otherwise the environment of the [commands]
   /// [prefixLogOutput]: if not null the output of the script is logged including of this prefix
   /// [logger] if null the static logger [_logger] will be used
   static String executeAsScript(String commands,

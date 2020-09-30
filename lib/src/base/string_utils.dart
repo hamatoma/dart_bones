@@ -311,7 +311,7 @@ class StringUtils {
   }
 
   /// Converts a glob [pattern] to a regular expression string.
-  /// [pattern]: a string with wildcards '*' and '?' and char classes, e.g. [a-z0-9]'
+  /// [pattern]: a string with wildcards '*' and '?' and char classes, e.g. "[a-z0-9\]"
   static String globPatternToRegExpression(String pattern) {
     // mask all meta characters:
     var rc = pattern.replaceAll(r'\', r'\\');
@@ -331,15 +331,15 @@ class StringUtils {
   }
 
   /// Tests whether the [argument] has the [longName] or the [shortName] and an integer.
-  /// Returns the value of the int argument or the [noneValue]
+  /// Returns the value of the int argument or the [defaultValue]
   /// Throws OptionException on error.
   /// [longName]: the long name to inspect, e.g. 'max-length'
   /// [shortName]: the short name to inspect, e.g. 'm'
   /// [argument]: argument to inspect, e.g. '--max-length=3'
   /// [defaultValue]: if the arguments does not match: this value is returned
   static int intOption(
-      String longName, String shortName, String argument, int noneValue) {
-    var rc = noneValue;
+      String longName, String shortName, String argument, int defaultValue) {
+    var rc = defaultValue;
     if (argument == '--$longName') {
       throw OptionException('missing "<int>" in $argument');
     } else if (argument.startsWith('--$longName=')) {

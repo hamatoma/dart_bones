@@ -6,14 +6,12 @@ class BaseConfiguration {
   @protected Map yamlMap;
   @protected BaseLogger logger;
   /// Constructor: reads the configuration file.
-  /// [directory]: the configuration file will be searched here
-  /// [filePrefix]: the filename without extension. The extension will be found automatically
+  /// [yamlMap] contains the data.
   BaseConfiguration(this.yamlMap, this.logger);
 
   /// Returns an int value given by [section] and [key].
   /// [key]: the key of the (key value) pair
   /// [section]: if given the (key value) pair is searched in this section
-  /// [defaultValue]: if the key does not exists this value is returned
   bool asBool(String key, {String section}) {
     var rc = false;
     final value = asString(key, section: section);

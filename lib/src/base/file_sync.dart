@@ -92,7 +92,6 @@ class FileSync {
   }
 
   /// Makes an directory if it does not exist.
-  /// If [logger] is given a message is logged.
   /// [path] the name of the directory
   /// [mode] the rights, e.g. 0o777 for all rights
   /// [owner] the UID of the owner
