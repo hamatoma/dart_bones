@@ -1,8 +1,12 @@
+## [0.2.6] - 2020.09.30
+
+* pubspec.yaml for the example
+* relative addressing of dart_bones.dart
+
 ## [0.2.5] - 2020.09.30
 
 * repaired: dartdoc warnings
 * example added
-
 
 ## [0.2.4] - 2020.09.27
 

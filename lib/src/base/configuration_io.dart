@@ -1,14 +1,18 @@
-import 'package:dart_bones/dart_bones.dart';
 import 'package:yaml/yaml.dart';
+
+import '../../dart_bones.dart';
 
 /// Implements static functions for files and directories in the sync variant.
 class Configuration extends BaseConfiguration {
   String _filename;
+
   String get filename => _filename;
+
   /// Constructor: reads the configuration file.
   /// [directory]: the configuration file will be searched here
   /// [filePrefix]: the filename without extension. The extension will be found automatically
-  Configuration(String directory, String filePrefix, BaseLogger logger) : super ({}, logger){
+  Configuration(String directory, String filePrefix, BaseLogger logger)
+      : super({}, logger) {
     final prefix = FileSync.joinPaths(
         directory,
         filePrefix.endsWith('.yaml')

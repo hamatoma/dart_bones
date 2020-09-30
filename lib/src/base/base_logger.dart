@@ -1,4 +1,3 @@
-
 import 'package:meta/meta.dart';
 
 const LEVEL_DETAIL = 2;

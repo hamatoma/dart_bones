@@ -1,5 +1,6 @@
-import 'package:dart_bones/dart_bones.dart';
 import 'package:dart_bones/src/base/base_configuration.dart';
+
+import '../../dart_bones.dart';
 
 /// Implements static functions for files and directories in the sync variant.
 class Configuration extends BaseConfiguration {

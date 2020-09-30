@@ -1,5 +1,6 @@
-import 'package:dart_bones/dart_bones.dart';
 import 'package:sprintf/sprintf.dart';
+
+import '../../dart_bones.dart';
 
 class OptionException implements Exception {
   String cause;
@@ -462,8 +463,7 @@ class StringUtils {
       final name = matcher.group(1);
       if (!variables.containsKey(name)) {
         _logger?.error(
-            'replaceVariables(): unknown placeholder $name in ${StringUtils
-                .limitString(input, 40)}');
+            'replaceVariables(): unknown placeholder $name in ${StringUtils.limitString(input, 40)}');
       } else {
         rc = rc.replaceAll(matcher.group(0), variables[name]);
       }

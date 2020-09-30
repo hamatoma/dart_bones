@@ -1,4 +1,4 @@
-import 'package:dart_bones/dart_bones.dart';
+import '../../dart_bones.dart';
 
 /// Implements a logger which logs to stdout and stores the messages.
 class MemoryLogger extends BaseLogger {

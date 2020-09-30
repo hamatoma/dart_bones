@@ -1,4 +1,4 @@
-import 'package:dart_bones/dart_bones.dart';
+import '../../dart_bones.dart';
 
 class Logger extends BaseLogger {
   String _filename;

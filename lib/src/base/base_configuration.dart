@@ -1,10 +1,14 @@
-import 'package:dart_bones/dart_bones.dart';
 import 'package:meta/meta.dart';
+
+import '../../dart_bones.dart';
 
 /// Implements static functions for files and directories in the sync variant.
 class BaseConfiguration {
-  @protected Map yamlMap;
-  @protected BaseLogger logger;
+  @protected
+  Map yamlMap;
+  @protected
+  BaseLogger logger;
+
   /// Constructor: reads the configuration file.
   /// [yamlMap] contains the data.
   BaseConfiguration(this.yamlMap, this.logger);

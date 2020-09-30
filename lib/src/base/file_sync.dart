@@ -1,7 +1,8 @@
 import 'dart:io';
 
-import 'package:dart_bones/dart_bones.dart';
 import 'package:sprintf/sprintf.dart';
+
+import '../../dart_bones.dart';
 
 /// Implements static functions for files and directories in the sync variant.
 class FileSync {

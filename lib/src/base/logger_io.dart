@@ -1,14 +1,17 @@
 //import 'package:dart_bones/src/base/base_logger.dart';
-import 'package:dart_bones/dart_bones.dart';
 import 'dart:io';
+
+import '../../dart_bones.dart';
 
 class Logger extends BaseLogger {
   String _filename;
   File _file;
-  Logger(String filename, [int logLevel = 1]) : super(logLevel){
+
+  Logger(String filename, [int logLevel = 1]) : super(logLevel) {
     _filename = filename;
     _file = File(filename);
   }
+
   String get filename => _filename;
 
   @override

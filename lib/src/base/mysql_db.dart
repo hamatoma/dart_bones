@@ -1,7 +1,8 @@
 import 'dart:async';
 
-import 'package:dart_bones/dart_bones.dart';
 import 'package:mysql1/mysql1.dart';
+
+import '../../dart_bones.dart';
 
 typedef CallbackOnSingleRow = Future<bool> Function(List<dynamic> row);
 
