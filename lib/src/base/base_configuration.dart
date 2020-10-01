@@ -1,6 +1,6 @@
 import 'package:meta/meta.dart';
 
-import '../../dart_bones.dart';
+import 'base_logger.dart';
 
 /// Implements static functions for files and directories in the sync variant.
 class BaseConfiguration {

@@ -1,6 +1,7 @@
 import 'dart:io';
 
-import '../../dart_bones.dart';
+import 'base_logger.dart';
+import 'file_sync_io.dart';
 
 class ProcessSync {
   static BaseLogger _logger;

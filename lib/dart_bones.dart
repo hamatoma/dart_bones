@@ -8,7 +8,9 @@ export 'src/base/configuration_none.dart' // Stub implementation
     if (dart.library.io) 'src/base/configuration_io.dart' // dart:io implementation
     if (dart.library.html) 'src/base/configuration_html.dart'; // dart:html implementation
 export 'src/base/defines.dart';
-export 'src/base/file_sync.dart';
+export 'src/base/file_sync_io.dart' // default
+    if (dart.library.io) 'src/base/file_sync_io.dart' // dart:io implementation
+    if (dart.library.html) 'src/base/file_sync_none.dart'; // dart:web implementation
 export 'src/base/logger_none.dart' // Stub implementation
     if (dart.library.io) 'src/base/logger_io.dart' // dart:io implementation
     if (dart.library.html) 'src/base/logger_html.dart'; // dart:html implementation

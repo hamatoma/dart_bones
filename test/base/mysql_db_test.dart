@@ -4,7 +4,13 @@ import 'package:test/test.dart';
 const SQL_ERROR = 'You have an error in your SQL syntax';
 
 Future<MySqlDb> prepare(BaseLogger logger) async {
-  final db = MySqlDb('testdb', 'test', 'TopSecret', 'localhost', 3306, logger);
+  final db = MySqlDb(
+      dbName: 'testdb',
+      dbUser: 'test',
+      dbCode: 'TopSecret',
+      dbHost: 'localhost',
+      dbPort: 3306,
+      logger: logger);
   var success;
   await db.connect();
   success = await db.execute('drop table if exists clouds;');
@@ -66,7 +72,12 @@ void main() async {
   group('Basics', () {
     test('connect-fail', () async {
       final db2 = MySqlDb(
-          'testdb', 'test', 'not-really-known', 'localhost', 3306, logger);
+          dbName: 'testdb',
+          dbUser: 'test',
+          dbCode: 'not-really-known',
+          dbHost: 'localhost',
+          dbPort: 3306,
+          logger: logger);
       expect(await db2.connect(), isFalse);
     });
     test('execute-fail-sql', () async {

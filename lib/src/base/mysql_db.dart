@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:meta/meta.dart';
 import 'package:mysql1/mysql1.dart';
 
 import '../../dart_bones.dart';
@@ -34,29 +35,37 @@ class DbException implements Exception {
 }
 
 class MySqlDb {
-  String _dbName;
-  String _dbUser;
-  String _dbCode;
-  String _dbHost;
-  int _dbPort;
+  String dbName;
+  String dbUser;
+  String dbCode;
+  String dbHost;
+  int dbPort;
   bool _throwOnError = false;
   Results _lastResults;
   MySqlConnection _dbConnection;
-  final BaseLogger _logger;
+  final BaseLogger logger;
 
   /// Constructor
-  MySqlDb(this._dbName, this._dbUser, this._dbCode, this._dbHost, this._dbPort,
-      this._logger);
+  MySqlDb(
+      {@required this.dbName,
+      @required this.dbUser,
+      @required this.dbCode,
+      this.dbHost = 'localhost',
+      this.dbPort = 3306,
+      @required this.logger});
 
   /// Constructor. Builds the instance from the [configuration] data.
-  MySqlDb.fromConfiguration(BaseConfiguration configuration, this._logger,
+  MySqlDb.fromConfiguration(BaseConfiguration configuration, this.logger,
       {String section = 'db'}) {
-    _dbName = configuration.asString('db', section: section);
-    _dbUser = configuration.asString('user', section: section);
-    _dbCode = configuration.asString('code', section: section);
-    _dbHost = configuration.asString('host',
-        section: section, defaultValue: 'localhost');
-    _dbPort = configuration.asInt('port', section: section, defaultValue: 3306);
+    MySqlDb(
+        dbName: configuration.asString('db', section: section),
+        dbUser: configuration.asString('user', section: section),
+        dbCode: configuration.asString('code', section: section),
+        dbHost: configuration.asString('host',
+            section: section, defaultValue: 'localhost'),
+        dbPort:
+            configuration.asInt('port', section: section, defaultValue: 3306),
+        logger: logger);
   }
 
   bool get hasConnection => _dbConnection != null;
@@ -109,28 +118,27 @@ class MySqlDb {
   Future<bool> connect({bool throwOnError}) async {
     bool rc;
     try {
-      _logger.log(
-          'connect to $_dbHost:$_dbPort-$_dbName:$_dbUser', LEVEL_SUMMERY);
+      logger.log('connect to $dbHost:$dbPort-$dbName:$dbUser', LEVEL_SUMMERY);
       final conn = _dbConnection = await MySqlConnection.connect(
           ConnectionSettings(
-              host: _dbHost,
-              port: _dbPort,
-              user: _dbUser,
-              db: _dbName,
-              password: _dbCode));
+              host: dbHost,
+              port: dbPort,
+              user: dbUser,
+              db: dbName,
+              password: dbCode));
       if (conn == null) {
-        final msg = 'cannot connect: db: $_dbName user: $_dbUser';
+        final msg = 'cannot connect: db: $dbName user: $dbUser';
         if (throwOnError ?? _throwOnError) {
           throw DbException(msg, null, null, null);
         }
       } else {
-        _logger.log('connection success', LEVEL_SUMMERY);
+        logger.log('connection success', LEVEL_SUMMERY);
         _dbConnection = conn;
       }
       rc = conn != null;
     } catch (exc, stack) {
-      final msg = 'cannot connect (2): db: $_dbName user: $_dbUser';
-      _logger.error(msg);
+      final msg = 'cannot connect (2): db: $dbName user: $dbUser';
+      logger.error(msg);
       if (throwOnError ?? _throwOnError) {
         throw DbException(msg, null, null, '$exc\n$stack');
       }
@@ -157,11 +165,11 @@ class MySqlDb {
         final msg =
             '$name not found in sql: ${StringUtils.limitString(sql, 80)}';
         if (ignoreError) {
-          _logger.log(
+          logger.log(
               '$name not found in sql: ${StringUtils.limitString(sql, 80)}',
               LEVEL_DETAIL);
         } else {
-          _logger.error(msg);
+          logger.error(msg);
           sql2 = null;
           break;
         }
@@ -181,12 +189,12 @@ class MySqlDb {
   /// return: null: failure otherwise: the Results instance
   Future<Results> deleteRaw(String sql,
       {List<dynamic> params, bool throwOnError}) async {
-    _logger.log(sql, LEVEL_FINE);
+    logger.log(sql, LEVEL_FINE);
     try {
       _lastResults = await _dbConnection.query(sql, params);
     } catch (error) {
       _lastResults = null;
-      _logger.error('cannot delete: $error\n$sql');
+      logger.error('cannot delete: $error\n$sql');
       if (throwOnError ?? _throwOnError) {
         throw DbException('deleteRaw()', sql, params, error.toString());
       }
@@ -203,13 +211,13 @@ class MySqlDb {
   Future<bool> execute(String sql,
       {List<dynamic> params, bool throwOnError}) async {
     var rc = true;
-    _logger.log(sql, LEVEL_FINE);
+    logger.log(sql, LEVEL_FINE);
     _lastResults = null;
     try {
       final results = await _dbConnection.query(sql, params);
       _lastResults = results;
     } catch (error) {
-      _logger.error('cannot execute: $error\n$sql');
+      logger.error('cannot execute: $error\n$sql');
       _lastResults = null;
       rc = false;
       if (throwOnError ?? _throwOnError) {
@@ -227,10 +235,11 @@ class MySqlDb {
   /// return: 0: failure otherwise: the primary key of the new record
   Future<int> insertOne(String sql,
       {List<dynamic> params, bool throwOnError}) async {
-    final results = await insertRaw(sql, params: params, throwOnError: throwOnError);
+    final results =
+    await insertRaw(sql, params: params, throwOnError: throwOnError);
     final rc = results == null ? null : results.insertId;
     if (results != null && results.affectedRows != 1) {
-      _logger.error('insert failed:\n$sql');
+      logger.error('insert failed:\n$sql');
       if (throwOnError ?? _throwOnError) {
         throw DbException('insertOne()', sql, params,
             'affected rows: ${results.affectedRows} instead of 1');
@@ -247,12 +256,12 @@ class MySqlDb {
   /// return: null: failure otherwise: the Results instance
   Future<Results> insertRaw(String sql,
       {List<dynamic> params, bool throwOnError}) async {
-    _logger.log(sql, LEVEL_FINE);
+    logger.log(sql, LEVEL_FINE);
     try {
       _lastResults = await _dbConnection.query(sql, params);
     } catch (error) {
       _lastResults = null;
-      _logger.error('insert failed: $error\n$sql');
+      logger.error('insert failed: $error\n$sql');
       if (throwOnError ?? _throwOnError) {
         throw DbException('insertRaw()', sql, params, error.toString());
       }
@@ -268,12 +277,12 @@ class MySqlDb {
   /// return: null: failure otherwise: the Results instance
   Future<Results> readAll(String sql,
       {List<dynamic> params, bool throwOnError}) async {
-    _logger.log(sql, LEVEL_FINE);
+    logger.log(sql, LEVEL_FINE);
     try {
       _lastResults = await _dbConnection.query(sql, params);
     } catch (error) {
       _lastResults = null;
-      _logger.error('readAll failed: $error\n$sql');
+      logger.error('readAll failed: $error\n$sql');
       if (throwOnError ?? _throwOnError) {
         throw DbException('readAll()', sql, params, error.toString());
       }
@@ -327,7 +336,7 @@ class MySqlDb {
   Future<bool> readAndExecute(String sql, List<dynamic> parameters,
       CallbackOnSingleRow onSingleRow) async {
     var rc = true;
-    _logger.log(sql, LEVEL_FINE);
+    logger.log(sql, LEVEL_FINE);
     // _lastResults = null;
     try {
       _lastResults = await _dbConnection.query(sql, parameters);
@@ -335,7 +344,7 @@ class MySqlDb {
         await onSingleRow(row);
       }
     } catch (error) {
-      _logger.error('readAndExecute(): $error\n$sql');
+      logger.error('readAndExecute(): $error\n$sql');
       rc = false;
     }
     return rc;
@@ -356,7 +365,7 @@ class MySqlDb {
       if (rc == null) {
         rc = row.fields;
       } else {
-        _logger.error('read failed:\n$sql');
+        logger.error('read failed:\n$sql');
         if (throwOnError ?? _throwOnError) {
           throw DbException(
               'readOneAsMap()', sql, params, 'more than one record');
@@ -365,7 +374,7 @@ class MySqlDb {
       }
     }
     if (!found) {
-      _logger.error('no record found:\n$sql');
+      logger.error('no record found:\n$sql');
       if (throwOnError ?? _throwOnError) {
         throw DbException('readOneAsMap()', sql, params, 'no record');
       }
@@ -384,13 +393,14 @@ class MySqlDb {
       {List<dynamic> params, nullAllowed = false, bool throwOnError}) async {
     int rc;
     var found = false;
-    final results = await readAll(sql, params: params, throwOnError: throwOnError);
+    final results =
+    await readAll(sql, params: params, throwOnError: throwOnError);
     if (results != null) {
       for (var row in results) {
         found = true;
         if (rc == null) {
           if (row.values.length > 1) {
-            _logger.error('more than one record found:\n$sql');
+            logger.error('more than one record found:\n$sql');
             if (throwOnError ?? _throwOnError) {
               throw DbException(
                   'readOneInt()', sql, params, 'more than one value');
@@ -400,7 +410,7 @@ class MySqlDb {
           if (row.values[0] is int) {
             rc = row.values[0];
           } else {
-            _logger.error('not an integer:\n$sql');
+            logger.error('not an integer:\n$sql');
             if (throwOnError ?? _throwOnError) {
               throw DbException('readOneInt()', sql, params,
                   'not an integer: ${row.values[0]}');
@@ -408,7 +418,7 @@ class MySqlDb {
             break;
           }
         } else {
-          _logger.error('more than one record found:\n$sql');
+          logger.error('more than one record found:\n$sql');
           if (throwOnError ?? _throwOnError) {
             throw DbException(
                 'readOneInt()', sql, params, 'more than one record');
@@ -417,7 +427,7 @@ class MySqlDb {
         }
       }
       if (!found && !nullAllowed) {
-        _logger.error('no record found:\n$sql');
+        logger.error('no record found:\n$sql');
         if (throwOnError ?? _throwOnError) {
           throw DbException('readOneInt()', sql, params, 'no record found');
         }
@@ -443,7 +453,7 @@ class MySqlDb {
       if (rc == null) {
         rc = row.values[0].toString();
       } else {
-        _logger.error('more than one record found:\n$sql');
+        logger.error('more than one record found:\n$sql');
         if (throwOnError ?? _throwOnError) {
           throw DbException(
               'readOneString()', sql, params, 'more than one record');
@@ -452,7 +462,7 @@ class MySqlDb {
       }
     }
     if (!found && !nullAllowed) {
-      _logger.error('no record found:\n$sql');
+      logger.error('no record found:\n$sql');
       if (throwOnError ?? _throwOnError) {
         throw DbException('readOneString()', sql, params, 'no record');
       }
@@ -473,7 +483,7 @@ class MySqlDb {
         await updateRaw(sql, params: params, throwOnError: throwOnError);
     if (affected != 1) {
       final msg = 'affected rows: $affected instead of 1';
-      _logger.error('$msg\n$sql');
+      logger.error('$msg\n$sql');
       if (throwOnError ?? _throwOnError) {
         throw DbException('updateOne()', sql, params, msg);
       }
@@ -564,13 +574,13 @@ class MySqlDb {
   /// return: null: failure otherwise: the number of affected rows
   Future<int> updateRaw(String sql,
       {List<dynamic> params, bool throwOnError}) async {
-    _logger.log(sql, LEVEL_FINE);
+    logger.log(sql, LEVEL_FINE);
     _lastResults = null;
     try {
       final results = await _dbConnection.query(sql, params);
       _lastResults = results;
     } catch (error) {
-      _logger.error('cannot update: $error\n$sql');
+      logger.error('cannot update: $error\n$sql');
       _lastResults = null;
       if (throwOnError ?? _throwOnError) {
         throw DbException('updateRaw()', sql, params, error.toString());

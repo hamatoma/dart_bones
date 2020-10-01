@@ -1,3 +1,19 @@
+## [0.3.1] - 2020.10.11
+
+Note: not compatible: mysql_db (1)
+* mysql_db:
+** Constructors: parameters changed to named parameters
+** _logger renamed to logger: needed for derived classes
+
+* file_sync:
+** new: _logger, setLogger()
+
+## [0.2.7] - 2020.09.30
+
+* all imports in lib/* are explicit, not from package:dart_bones
+* pubspec.yaml: versions adapted
+* file_sync_none.dart if dart:io is not available
+
 ## [0.2.6] - 2020.09.30
 
 * pubspec.yaml for the example

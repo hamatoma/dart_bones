@@ -1,6 +1,8 @@
 import 'package:yaml/yaml.dart';
 
-import '../../dart_bones.dart';
+import 'base_configuration.dart';
+import 'base_logger.dart';
+import 'file_sync_io.dart';
 
 /// Implements static functions for files and directories in the sync variant.
 class Configuration extends BaseConfiguration {
@@ -30,10 +32,12 @@ class Configuration extends BaseConfiguration {
   }
 
   /// Constructor with a given or empty [map].
-  Configuration.constructed(BaseLogger logger, {Map<String, dynamic> map}): super(map, logger);
+  Configuration.constructed(BaseLogger logger, {Map<String, dynamic> map})
+      : super(map, logger);
 
   /// Constructor with a given filename.
-  Configuration.fromFile(this._filename, BaseLogger logger): super({}, logger) {
+  Configuration.fromFile(this._filename, BaseLogger logger)
+      : super({}, logger) {
     if (FileSync.isFile(_filename)) {
       final content = FileSync.fileAsString(filename);
       yamlMap = loadYaml(content);
