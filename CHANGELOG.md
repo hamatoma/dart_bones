@@ -1,6 +1,13 @@
+## [0.3.2] - 2020.10.12
+
+API break! not compatible: mysql_db (1)
+
+* mysql_db:
+** convertNamedParams() is now static and all parameters are named
+
 ## [0.3.1] - 2020.10.11
 
-Note: not compatible: mysql_db (1)
+API break! not compatible: mysql_db (1)
 * mysql_db:
 ** Constructors: parameters changed to named parameters
 ** _logger renamed to logger: needed for derived classes

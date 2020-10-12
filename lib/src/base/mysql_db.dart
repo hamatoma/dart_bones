@@ -150,8 +150,11 @@ class MySqlDb {
   /// Converts the [sql] statement with named parameters to a SQL statement with
   /// positional parameters and build the parameter list from a [mapParams].
   /// return: null: error found otherwise: the changed SQL and the parameter list
-  SqlAndParamList convertNamedParams(String sql, Map<String, dynamic> mapParams,
-      {bool ignoreError = false}) {
+  static SqlAndParamList convertNamedParams(
+      {@required String sql,
+      @required Map<String, dynamic> mapParams,
+      @required BaseLogger logger,
+      bool ignoreError = false}) {
     SqlAndParamList rc;
     final listParams = [];
     final regExp = RegExp(r':\w+');

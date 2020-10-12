@@ -382,8 +382,10 @@ void main() async {
   group('convert', () {
     test('convertNamedParams', () {
       final map = <String, dynamic>{':name': 'x', ':id': 22};
-      final sqlAndList = db.convertNamedParams(
-          "select * from users where :name='a' and :id < 9 or :name='b", map);
+      final sqlAndList = MySqlDb.convertNamedParams(
+          sql: "select * from users where :name='a' and :id < 9 or :name='b",
+          mapParams: map,
+          logger: logger);
       expect(sqlAndList.sql,
           equals("select * from users where ?='a' and ? < 9 or ?='b"));
       expect(sqlAndList.params.length, equals(3));
@@ -395,16 +397,21 @@ void main() async {
       final map = <String, dynamic>{':name': 'x', ':idChanged': 22};
       logger.log('= expecting an error', 1);
       logger.errors.clear();
-      final sqlAndList = db.convertNamedParams(
-          "select * from users where :name='a' and :id < 9 or :name='b", map);
+      final sqlAndList = MySqlDb.convertNamedParams(
+          sql: "select * from users where :name='a' and :id < 9 or :name='b",
+          mapParams: map,
+          logger: logger);
       expect(sqlAndList, isNull);
       expect(logger.errors.length, equals(1));
       expect(
           logger.errors[0],
           equals(
               ":id not found in sql: select * from users where :name='a' and :id < 9 or :name='b"));
-      db.convertNamedParams(
-          "select * from users where :name='a' and :id < 9 or :name='b", map, ignoreError: true);
+      MySqlDb.convertNamedParams(
+          sql: "select * from users where :name='a' and :id < 9 or :name='b",
+          mapParams: map,
+          logger: logger,
+          ignoreError: true);
       logger.contains('not found');
     });
   });
