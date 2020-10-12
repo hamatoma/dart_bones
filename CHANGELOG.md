@@ -1,4 +1,11 @@
-## [0.3.2] - 2020.10.12
+## [0.4.2] - 2020.10.13
+
+* configuration_io:
+** new: fetchYamlMapFromFile()
+** error if yaml file content is empty
+** more elegant implementation of Configuration.fromFile()
+
+## [0.4.1] - 2020.10.12
 
 API break! not compatible: mysql_db (1)
 

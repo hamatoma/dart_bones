@@ -8,8 +8,6 @@ import 'file_sync_io.dart';
 class Configuration extends BaseConfiguration {
   String _filename;
 
-  String get filename => _filename;
-
   /// Constructor: reads the configuration file.
   /// [directory]: the configuration file will be searched here
   /// [filePrefix]: the filename without extension. The extension will be found automatically
@@ -36,14 +34,28 @@ class Configuration extends BaseConfiguration {
       : super(map, logger);
 
   /// Constructor with a given filename.
-  Configuration.fromFile(this._filename, BaseLogger logger)
-      : super({}, logger) {
-    if (FileSync.isFile(_filename)) {
-      final content = FileSync.fileAsString(filename);
-      yamlMap = loadYaml(content);
+  Configuration.fromFile(String filename, BaseLogger logger)
+      : super(fetchYamlMapFromFile(filename, logger), logger) {
+    _filename = filename;
+  }
+
+  String get filename => _filename;
+
+  /// Reads the content of a file named [filename] and returns the YamlMap instance.
+  static Map fetchYamlMapFromFile(String filename, BaseLogger logger) {
+    var map;
+    if (!FileSync.isFile(filename)) {
+      logger.error('configuration file not found: $filename');
+      map = {};
     } else {
-      logger.error('configuration file not found: $_filename.*');
-      yamlMap = {};
+      final content = FileSync.fileAsString(filename);
+      if (content.isEmpty) {
+        logger.error('empty yaml file: $filename');
+        map = {};
+      } else {
+        map = loadYaml(content);
+      }
     }
+    return map;
   }
 }
