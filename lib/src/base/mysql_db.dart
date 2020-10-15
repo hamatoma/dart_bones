@@ -57,15 +57,12 @@ class MySqlDb {
   /// Constructor. Builds the instance from the [configuration] data.
   MySqlDb.fromConfiguration(BaseConfiguration configuration, this.logger,
       {String section = 'db'}) {
-    MySqlDb(
-        dbName: configuration.asString('db', section: section),
-        dbUser: configuration.asString('user', section: section),
-        dbCode: configuration.asString('code', section: section),
-        dbHost: configuration.asString('host',
-            section: section, defaultValue: 'localhost'),
-        dbPort:
-            configuration.asInt('port', section: section, defaultValue: 3306),
-        logger: logger);
+    dbName = configuration.asString('db', section: section);
+    dbUser = configuration.asString('user', section: section);
+    dbCode = configuration.asString('code', section: section);
+    dbHost = configuration.asString('host',
+        section: section, defaultValue: 'localhost');
+    dbPort = configuration.asInt('port', section: section, defaultValue: 3306);
   }
 
   bool get hasConnection => _dbConnection != null;
@@ -147,43 +144,6 @@ class MySqlDb {
     return rc;
   }
 
-  /// Converts the [sql] statement with named parameters to a SQL statement with
-  /// positional parameters and build the parameter list from a [mapParams].
-  /// return: null: error found otherwise: the changed SQL and the parameter list
-  static SqlAndParamList convertNamedParams(
-      {@required String sql,
-      @required Map<String, dynamic> mapParams,
-      @required BaseLogger logger,
-      bool ignoreError = false}) {
-    SqlAndParamList rc;
-    final listParams = [];
-    final regExp = RegExp(r':\w+');
-    var sql2 = sql;
-    for (var matcher in regExp.allMatches(sql)) {
-      final name = matcher.group(0);
-      if (mapParams.containsKey(name)) {
-        listParams.add(mapParams[name]);
-        sql2 = sql2.replaceFirst(name, '?');
-      } else {
-        final msg =
-            '$name not found in sql: ${StringUtils.limitString(sql, 80)}';
-        if (ignoreError) {
-          logger.log(
-              '$name not found in sql: ${StringUtils.limitString(sql, 80)}',
-              LEVEL_DETAIL);
-        } else {
-          logger.error(msg);
-          sql2 = null;
-          break;
-        }
-      }
-    }
-    if (sql2 != null) {
-      rc = SqlAndParamList(sql2, listParams);
-    }
-    return rc;
-  }
-
   /// Executes an DELETE statement.
   /// [sql] the sql statement, e.g. 'insert into users (user_name) values (?);'
   /// [params] null or the positional parameters, e.g. ['john']
@@ -239,7 +199,7 @@ class MySqlDb {
   Future<int> insertOne(String sql,
       {List<dynamic> params, bool throwOnError}) async {
     final results =
-    await insertRaw(sql, params: params, throwOnError: throwOnError);
+        await insertRaw(sql, params: params, throwOnError: throwOnError);
     final rc = results == null ? null : results.insertId;
     if (results != null && results.affectedRows != 1) {
       logger.error('insert failed:\n$sql');
@@ -603,6 +563,42 @@ class MySqlDb {
       rc = StringUtils.dateToString('Y-m-d H:i:s', value);
     } else {
       rc = '$value';
+    }
+    return rc;
+  }
+
+  /// Converts the [sql] statement with named parameters to a SQL statement with
+  /// positional parameters and build the parameter list from a [mapParams].
+  /// return: null: error found otherwise: the changed SQL and the parameter list
+  static SqlAndParamList convertNamedParams({@required String sql,
+    @required Map<String, dynamic> mapParams,
+    @required BaseLogger logger,
+    bool ignoreError = false}) {
+    SqlAndParamList rc;
+    final listParams = [];
+    final regExp = RegExp(r':\w+');
+    var sql2 = sql;
+    for (var matcher in regExp.allMatches(sql)) {
+      final name = matcher.group(0);
+      if (mapParams.containsKey(name)) {
+        listParams.add(mapParams[name]);
+        sql2 = sql2.replaceFirst(name, '?');
+      } else {
+        final msg =
+            '$name not found in sql: ${StringUtils.limitString(sql, 80)}';
+        if (ignoreError) {
+          logger.log(
+              '$name not found in sql: ${StringUtils.limitString(sql, 80)}',
+              LEVEL_DETAIL);
+        } else {
+          logger.error(msg);
+          sql2 = null;
+          break;
+        }
+      }
+    }
+    if (sql2 != null) {
+      rc = SqlAndParamList(sql2, listParams);
     }
     return rc;
   }

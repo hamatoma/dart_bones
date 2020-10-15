@@ -86,10 +86,14 @@ void main() async {
     });
     test('fromConfiguration', () async {
       final config = BaseConfiguration({
-        'db': {'db': 'testdb', 'user': 'test', 'code': 'TopSecret'}
+        'db': {'db': 'testdb2', 'user': 'test2', 'code': 'X', 'port': 1234}
       }, logger);
       final db3 = MySqlDb.fromConfiguration(config, logger);
       db3.throwOnError = false;
+      expect(db3.dbName, equals('testdb2'));
+      expect(db3.dbUser, equals('test2'));
+      expect(db3.dbCode, equals('X'));
+      expect(db3.dbPort, equals(1234));
       expect(db3.hasConnection, isFalse);
       expect(await db3.execute('show tables;'), isFalse);
       db3.close();
