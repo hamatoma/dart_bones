@@ -9,7 +9,6 @@ const LEVEL_SUMMERY = 1;
 class BaseLogger {
   @protected
   var countErrors = 0;
-  @protected
   var logLevel = 1;
   List<String> errors = [];
   var _maxErrors = 100;
@@ -18,9 +17,6 @@ class BaseLogger {
   /// [logLevel]: the messages will be displayed on stdout only if the current
   /// level is lower or equals to the [logLevel].
   BaseLogger(this.logLevel);
-
-  /// Sets the [_maxErrors] to limit the length of the internal error list.
-  void setMaxErrors(int value) => _maxErrors = value;
 
   /// Clears all errors.
   void clearErrors() {
@@ -49,9 +45,14 @@ class BaseLogger {
   /// Displays the message if [logLevel] <= [level]
   /// [message]: message to display
   /// [level]: represent the importance of the message
-  void log(String message, [int level = 1]) {
+  /// Returns true (for chaining)
+  bool log(String message, [int level = LEVEL_SUMMERY]) {
     if (level <= logLevel) {
       print(message);
     }
+    return true;
   }
+
+  /// Sets the [_maxErrors] to limit the length of the internal error list.
+  void setMaxErrors(int value) => _maxErrors = value;
 }

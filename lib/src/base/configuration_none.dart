@@ -6,8 +6,6 @@ import '../../dart_bones.dart';
 class Configuration extends BaseConfiguration {
   String _filename;
 
-  String get filename => _filename;
-
   /// Constructor: reads the configuration file.
   /// [directory]: the configuration file will be searched here
   /// [filePrefix]: the filename without extension. The extension will be found automatically
@@ -15,7 +13,10 @@ class Configuration extends BaseConfiguration {
       : super({}, logger);
 
   /// Constructor with a given filename.
-  Configuration.fromFile(this._filename, BaseLogger logger) : super({}, logger){
+  Configuration.fromFile(this._filename, BaseLogger logger)
+      : super({}, logger) {
     logger.log('configuration_none::Configuration.fromFile() used');
   }
+
+  String get filename => _filename;
 }

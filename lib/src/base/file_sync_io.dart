@@ -383,6 +383,21 @@ class FileSync {
     return rc;
   }
 
+  /// Returns the name of a directory inside the temp directory.
+  /// The directory will be created if it does not exist.
+  /// [node]: name of the directory
+  /// [logger]: if given the creation of directory will be logged
+  /// [subDirs]: if given: one or more nested directories, e.g. 'unittest/mytest'
+  /// node is laying inside [subDirs]
+  static String tempDirectory(String node,
+      {BaseLogger logger, String subDirs, String extension}) {
+    var rc = subDirs == null
+        ? joinPaths(tempDir, node)
+        : joinPaths(tempDir, subDirs, node);
+    ensureDirectory(rc);
+    return rc;
+  }
+
   /// Returns the name of a file inside the temp directory.
   /// If [subDirs] are given, these [subDirs] will be created if not existing.
   /// [node]: name of the returned filename (without path). If [node] endswith '*': a unique node is chosen
@@ -399,29 +414,11 @@ class FileSync {
     } else {
       rc += node.substring(0, node.length - 1) +
           '.' +
-          DateTime
-              .now()
-              .millisecondsSinceEpoch
-              .toString();
+          DateTime.now().millisecondsSinceEpoch.toString();
     }
     if (extension != null) {
       rc += extension;
     }
-    return rc;
-  }
-
-  /// Returns the name of a directory inside the temp directory.
-  /// The directory will be created if it does not exist.
-  /// [node]: name of the directory
-  /// [logger]: if given the creation of directory will be logged
-  /// [subDirs]: if given: one or more nested directories, e.g. 'unittest/mytest'
-  /// node is laying inside [subDirs]
-  static String tempDirectory(String node,
-      {BaseLogger logger, String subDirs, String extension}) {
-    var rc = subDirs == null
-        ? joinPaths(tempDir, node)
-        : joinPaths(tempDir, subDirs, node);
-    ensureDirectory(rc);
     return rc;
   }
 

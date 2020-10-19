@@ -1,3 +1,6 @@
+## [0.4.4] - 2020.10.19
+
+* 
 ## [0.4.3] - 2020.10.15
 
 * fix: MySqlDb.fromConfiguration(): wrong reference to MySqlDb()

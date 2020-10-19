@@ -15,13 +15,16 @@ class Logger extends BaseLogger {
   String get filename => _filename;
 
   @override
-  void log(String message, [int level=1]){
+  bool log(String message, [int level = 1]) {
     super.log(message, level);
     logToFile(message);
+    return true;
   }
+
   /// Writes a string into the logfile.
   /// [message] the line to write
-  void logToFile(String message){
-   _file.writeAsStringSync(message, flush: true, mode: FileMode.writeOnlyAppend);
+  void logToFile(String message) {
+    _file.writeAsStringSync(message,
+        flush: true, mode: FileMode.writeOnlyAppend);
   }
 }

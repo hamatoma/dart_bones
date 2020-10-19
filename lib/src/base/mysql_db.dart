@@ -40,6 +40,7 @@ class MySqlDb {
   String dbCode;
   String dbHost;
   int dbPort;
+  int traceDataLength = 80;
   bool _throwOnError = false;
   Results _lastResults;
   MySqlConnection _dbConnection;
@@ -152,7 +153,7 @@ class MySqlDb {
   /// return: null: failure otherwise: the Results instance
   Future<Results> deleteRaw(String sql,
       {List<dynamic> params, bool throwOnError}) async {
-    logger.log(sql, LEVEL_FINE);
+    logger.logLevel >= LEVEL_LOOP && traceSql(sql, params);
     try {
       _lastResults = await _dbConnection.query(sql, params);
     } catch (error) {
@@ -174,7 +175,7 @@ class MySqlDb {
   Future<bool> execute(String sql,
       {List<dynamic> params, bool throwOnError}) async {
     var rc = true;
-    logger.log(sql, LEVEL_FINE);
+    logger.logLevel >= LEVEL_LOOP && traceSql(sql, params);
     _lastResults = null;
     try {
       final results = await _dbConnection.query(sql, params);
@@ -219,7 +220,7 @@ class MySqlDb {
   /// return: null: failure otherwise: the Results instance
   Future<Results> insertRaw(String sql,
       {List<dynamic> params, bool throwOnError}) async {
-    logger.log(sql, LEVEL_FINE);
+    logger.logLevel >= LEVEL_LOOP && traceSql(sql, params);
     try {
       _lastResults = await _dbConnection.query(sql, params);
     } catch (error) {
@@ -240,7 +241,7 @@ class MySqlDb {
   /// return: null: failure otherwise: the Results instance
   Future<Results> readAll(String sql,
       {List<dynamic> params, bool throwOnError}) async {
-    logger.log(sql, LEVEL_FINE);
+    logger.logLevel >= LEVEL_LOOP && traceSql(sql, params);
     try {
       _lastResults = await _dbConnection.query(sql, params);
     } catch (error) {
@@ -262,7 +263,7 @@ class MySqlDb {
       {List<dynamic> params, bool throwOnError}) async {
     var rows = [];
     final results =
-        await readAll(sql, params: params, throwOnError: throwOnError);
+    await readAll(sql, params: params, throwOnError: throwOnError);
     if (results == null) {
       rows = null;
     } else {
@@ -270,6 +271,7 @@ class MySqlDb {
         rows.add(row);
       }
     }
+    logger.logLevel >= LEVEL_LOOP && logger.log('rows: ${rows?.length}');
     return rows;
   }
 
@@ -282,7 +284,7 @@ class MySqlDb {
       {List<dynamic> params, bool throwOnError}) async {
     var rows = <Map<String, dynamic>>[];
     final results =
-        await readAll(sql, params: params, throwOnError: throwOnError);
+    await readAll(sql, params: params, throwOnError: throwOnError);
     if (results == null) {
       rows = null;
     } else {
@@ -290,19 +292,20 @@ class MySqlDb {
         rows.add(row.fields);
       }
     }
+    logger.logLevel >= LEVEL_LOOP && logger.log('rows: ${rows?.length}');
     return rows;
   }
 
   /// Reads all record selected by a [sql] statement with parameters given
-  /// in [parameters] and call for each row a callback [onSingleRow].
+  /// in [params] and call for each row a callback [onSingleRow].
   /// return: true: success
-  Future<bool> readAndExecute(String sql, List<dynamic> parameters,
+  Future<bool> readAndExecute(String sql, List<dynamic> params,
       CallbackOnSingleRow onSingleRow) async {
     var rc = true;
-    logger.log(sql, LEVEL_FINE);
+    logger.logLevel >= LEVEL_LOOP && traceSql(sql, params);
     // _lastResults = null;
     try {
-      _lastResults = await _dbConnection.query(sql, parameters);
+      _lastResults = await _dbConnection.query(sql, params);
       for (var row in _lastResults) {
         await onSingleRow(row);
       }
@@ -343,6 +346,8 @@ class MySqlDb {
       }
       rc = null;
     }
+    logger.logLevel >= LEVEL_LOOP &&
+        logger.log('row items: ${rc?.keys?.length}');
     return rc;
   }
 
@@ -397,6 +402,7 @@ class MySqlDb {
         rc = null;
       }
     }
+    logger.log('result: ${rc}', LEVEL_LOOP);
     return rc;
   }
 
@@ -430,7 +436,25 @@ class MySqlDb {
         throw DbException('readOneString()', sql, params, 'no record');
       }
     }
+    logger.log('result: ${rc}', LEVEL_LOOP);
     return rc;
+  }
+
+  /// Writes the [sql] string with its parameters to the log, limited by [traceDataLength].
+  bool traceSql(String sql, List<dynamic> params) {
+    logger.log(StringUtils.limitString(sql, traceDataLength));
+    if (params != null) {
+      final buffer = StringBuffer('params: ');
+      var ix = -1;
+      while (++ix < params.length && buffer.length < traceDataLength) {
+        if (buffer.length > 8) {
+          buffer.write('|');
+        }
+        buffer.write('${params[ix]}');
+      }
+      logger.log(StringUtils.limitString(buffer.toString(), traceDataLength));
+    }
+    return true;
   }
 
   /// Executes an UPDATE statement for one record.
@@ -537,7 +561,7 @@ class MySqlDb {
   /// return: null: failure otherwise: the number of affected rows
   Future<int> updateRaw(String sql,
       {List<dynamic> params, bool throwOnError}) async {
-    logger.log(sql, LEVEL_FINE);
+    logger.logLevel >= LEVEL_LOOP && traceSql(sql, params);
     _lastResults = null;
     try {
       final results = await _dbConnection.query(sql, params);
@@ -549,7 +573,9 @@ class MySqlDb {
         throw DbException('updateRaw()', sql, params, error.toString());
       }
     }
-    return _lastResults?.affectedRows;
+    final rc = _lastResults?.affectedRows;
+    logger.log('affected: ${rc}', LEVEL_LOOP);
+    return rc;
   }
 
   /// Converts a database result [value] into a string.
