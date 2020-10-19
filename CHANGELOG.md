@@ -1,6 +1,15 @@
+## [0.4.5] - 2020.10.20
+
+* MySqlDb: fix: parameter sql in traceSql may be null
+
 ## [0.4.4] - 2020.10.19
 
-* 
+* Logger: 
+** logLevel: now public, 
+** log() now bool to allow chaining
+* MySqlDb: logging of SQL parameters and results
+** new: traceDataLength and traceSql()
+
 ## [0.4.3] - 2020.10.15
 
 * fix: MySqlDb.fromConfiguration(): wrong reference to MySqlDb()

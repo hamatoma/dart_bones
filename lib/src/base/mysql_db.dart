@@ -402,7 +402,7 @@ class MySqlDb {
         rc = null;
       }
     }
-    logger.log('result: ${rc}', LEVEL_LOOP);
+    logger.log('result: $rc', LEVEL_LOOP);
     return rc;
   }
 
@@ -436,13 +436,13 @@ class MySqlDb {
         throw DbException('readOneString()', sql, params, 'no record');
       }
     }
-    logger.log('result: ${rc}', LEVEL_LOOP);
+    logger.log('result: $rc', LEVEL_LOOP);
     return rc;
   }
 
   /// Writes the [sql] string with its parameters to the log, limited by [traceDataLength].
   bool traceSql(String sql, List<dynamic> params) {
-    logger.log(StringUtils.limitString(sql, traceDataLength));
+    logger.log(StringUtils.limitString(sql ?? 'null', traceDataLength));
     if (params != null) {
       final buffer = StringBuffer('params: ');
       var ix = -1;
