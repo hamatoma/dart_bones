@@ -23,7 +23,8 @@ class Logger extends BaseLogger {
 
   /// Writes a string into the logfile.
   /// [message] the line to write
-  void logToFile(String message){
-   _file.writeAsStringSync(message, flush: true, mode: FileMode.writeOnlyAppend);
+  void logToFile(String message) {
+    _file.writeAsStringSync(message,
+        flush: true, mode: FileMode.writeOnlyAppend);
   }
 }

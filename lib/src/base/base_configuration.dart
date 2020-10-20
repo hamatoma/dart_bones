@@ -13,7 +13,7 @@ class BaseConfiguration {
   /// [yamlMap] contains the data.
   BaseConfiguration(this.yamlMap, this.logger);
 
-  /// Returns an int value given by [section] and [key].
+  /// Returns a bool value given by [section] and [key].
   /// [key]: the key of the (key value) pair
   /// [section]: if given the (key value) pair is searched in this section
   bool asBool(String key, {String section}) {

@@ -139,5 +139,4 @@ class FileSync {
     final rc = ix < 0 ? '' : path.substring(0, ix + 1);
     return rc;
   }
-
 }

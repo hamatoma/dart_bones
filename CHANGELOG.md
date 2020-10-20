@@ -1,3 +1,7 @@
+## [0.4.6] - 2020.10.20
+
+* dependencies to flutter removed
+
 ## [0.4.5] - 2020.10.20
 
 * MySqlDb: fix: parameter sql in traceSql may be null

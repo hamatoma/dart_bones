@@ -263,7 +263,7 @@ class MySqlDb {
       {List<dynamic> params, bool throwOnError}) async {
     var rows = [];
     final results =
-    await readAll(sql, params: params, throwOnError: throwOnError);
+        await readAll(sql, params: params, throwOnError: throwOnError);
     if (results == null) {
       rows = null;
     } else {
@@ -574,7 +574,7 @@ class MySqlDb {
       }
     }
     final rc = _lastResults?.affectedRows;
-    logger.log('affected: ${rc}', LEVEL_LOOP);
+    logger.log('affected: $rc', LEVEL_LOOP);
     return rc;
   }
 

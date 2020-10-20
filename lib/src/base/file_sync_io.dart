@@ -431,11 +431,11 @@ class FileSync {
   /// [mode]: null or the access rights of the file
   static void toFile(String filename, String content,
       {DateTime date,
-        String dateAsString,
-        bool asTransaction = false,
-        bool inline = false,
-        int mode,
-        bool createDirectory = false}) {
+      String dateAsString,
+      bool asTransaction = false,
+      bool inline = false,
+      int mode,
+      bool createDirectory = false}) {
     final target = asTransaction
         ? FileSync.parentOf(filename) + '~' + nodeOf(filename) + '~'
         : filename;

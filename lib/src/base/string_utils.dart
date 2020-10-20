@@ -519,9 +519,7 @@ class StringUtils {
     }
     final val = matcher.group(1);
     year = val == null || val == ''
-        ? DateTime
-        .now()
-        .year
+        ? DateTime.now().year
         : int.parse(matcher.group(1));
     month = int.parse(matcher.group(2));
     day = int.parse(matcher.group(3));
