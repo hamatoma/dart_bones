@@ -1,3 +1,10 @@
+## [0.4.7] - 2020.11.17
+
+* FileSync
+** fix: ensureDirectory(): path may end with slash
+** fix: ensureDirectory(): no change of root directory "/"
+** new parameter trailingSlash in parentOf()
+
 ## [0.4.6] - 2020.10.20
 
 * dependencies to flutter removed

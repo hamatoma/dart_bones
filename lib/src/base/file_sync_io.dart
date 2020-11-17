@@ -100,19 +100,25 @@ class FileSync {
   /// [clear] true: the directory will be cleared (all entries inside will be deleted)
   static void ensureDirectory(String path,
       {int mode, int owner, int group, bool clear = false}) {
-    final dir = Directory(path);
-    if (!dir.existsSync()) {
-      _logger?.log('creating $path');
-      dir.createSync(recursive: true);
-    } else if (clear) {
-      clearDirectory(path);
-    }
+    // we do not handle '/':
+    if (path != '/') {
+      if (path.endsWith(sep)) {
+        path = path.substring(0, path.length - 1);
+      }
+      final dir = Directory(path);
+      if (!dir.existsSync()) {
+        _logger?.log('creating $path');
+        dir.createSync(recursive: true);
+      } else if (clear) {
+        clearDirectory(path);
+      }
 
-    if (owner != null || group != null) {
-      chown(path, owner, group: group);
-    }
-    if (mode != null) {
-      chmod(path, mode);
+      if (owner != null || group != null) {
+        chown(path, owner, group: group);
+      }
+      if (mode != null) {
+        chmod(path, mode);
+      }
     }
   }
 
@@ -331,9 +337,10 @@ class FileSync {
 
   /// Returns the parent directory of the [path].
   /// Example: dirname('abc/def.txt') == 'abc/'
-  static String parentOf(String path) {
+  /// [trailingSlash]: if false the trailing slash will not be part of the result
+  static String parentOf(String path, {bool trailingSlash: true}) {
     final ix = path.lastIndexOf(sep);
-    final rc = ix < 0 ? '' : path.substring(0, ix + 1);
+    final rc = ix < 0 ? '' : path.substring(0, ix + (trailingSlash ? 1 : 0));
     return rc;
   }
 

@@ -284,7 +284,7 @@ class MySqlDb {
       {List<dynamic> params, bool throwOnError}) async {
     var rows = <Map<String, dynamic>>[];
     final results =
-    await readAll(sql, params: params, throwOnError: throwOnError);
+        await readAll(sql, params: params, throwOnError: throwOnError);
     if (results == null) {
       rows = null;
     } else {
@@ -299,8 +299,8 @@ class MySqlDb {
   /// Reads all record selected by a [sql] statement with parameters given
   /// in [params] and call for each row a callback [onSingleRow].
   /// return: true: success
-  Future<bool> readAndExecute(String sql, List<dynamic> params,
-      CallbackOnSingleRow onSingleRow) async {
+  Future<bool> readAndExecute(
+      String sql, List<dynamic> params, CallbackOnSingleRow onSingleRow) async {
     var rc = true;
     logger.logLevel >= LEVEL_LOOP && traceSql(sql, params);
     // _lastResults = null;

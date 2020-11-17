@@ -168,6 +168,8 @@ void main() {
     test('parentOf', () {
       expect(FileSync.parentOf('abc.de'), equals(''));
       expect(FileSync.parentOf('path/a'), equals('path/'));
+      expect(FileSync.parentOf('path/a', trailingSlash: false), equals('path'));
+      expect(FileSync.parentOf('/', trailingSlash: false), equals(''));
       expect(
           FileSync.parentOf('/base/in/path/abc.de'), equals('/base/in/path/'));
     });
@@ -224,6 +226,7 @@ void main() {
   });
   group('directory', () {
     test('ensureDirectory', () {
+      logger.clear();
       final dir = FileSync.tempFile('dir.01', subDirs: 'unittest');
       FileSync.ensureDirectory(dir);
       expect(true, isDir(dir));
@@ -235,13 +238,16 @@ void main() {
       FileSync.ensureDirectory(dir,
           clear: true, owner: 33, group: 33, mode: 0777);
       expect(false, isFile(filename));
+      FileSync.ensureDirectory('/',
+          clear: true, owner: 33, group: 33, mode: 0777);
+      expect(logger.errors.length, equals(0));
     });
-    test('ensureDirectory', () {
-      final dir = FileSync.tempFile('dir.01', subDirs: 'unittest');
+    test('ensureDirectory-trailing-slash', () {
+      logger.clear();
+      final dir =
+          FileSync.tempFile('dir.slash', subDirs: 'unittest') + FileSync.sep;
       FileSync.ensureDirectory(dir);
       expect(true, isDir(dir));
-      FileSync.ensureDoesNotExist(dir);
-      expect(false, isDir(dir));
     });
     test('ensureDoesNotExist', () {
       final fn = FileSync.tempFile('aFile.txt', subDirs: 'unittest');
