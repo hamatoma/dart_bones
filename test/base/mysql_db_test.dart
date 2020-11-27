@@ -10,6 +10,8 @@ Future<MySqlDb> prepare(BaseLogger logger) async {
       dbCode: 'TopSecret',
       dbHost: 'localhost',
       dbPort: 3306,
+      sqlTracePrefix: 'sql: ',
+      traceDataLength: 120,
       logger: logger);
   var success;
   await db.connect();
@@ -451,6 +453,30 @@ void main() async {
           sql,
           equals(
               'insert into users(group_id,user_name,user_info) values (?,?,?);'));
+    });
+  });
+  group('trace', () {
+    test('sql-trace-limit', () async {
+      logger.clear();
+      await db.readAll('select * from users WHERE users.user_name != ' +
+          "'123456789 123456789 123456789 123456789 123456789 123456789 " +
+          "123456789 123456789 123456789 123456789 123456789 123456789 '");
+      expect(logger.contains('sql: select * from users ..'), isTrue);
+      expect(
+          logger.contains(
+              "WHERE users.user_name != '123456789 123456789 123456789 123456789 123456789 123456789 123456789..."),
+          isTrue);
+    });
+    test('sql-trace-limit-lowercase', () async {
+      logger.clear();
+      await db.readAll('select * from users where users.user_name != ' +
+          "'123456789 123456789 123456789 123456789 123456789 123456789 " +
+          "123456789 123456789 123456789 123456789 123456789 123456789 '");
+      expect(logger.contains('sql: select * from users ..'), isTrue);
+      expect(
+          logger.contains(
+              "where users.user_name != '123456789 123456789 123456789 123456789 123456789 123456789 123456789..."),
+          isTrue);
     });
   });
 }

@@ -339,6 +339,7 @@ void main() {
       expect(StringUtils.limitString('abc123', 0), equals(''));
       expect(
           StringUtils.limitString('abc123', 5, ellipsis: '*'), equals('abc1*'));
+      expect(StringUtils.limitString(null, 10), isNull);
     });
     test('stringToEnum', () {
       expect(StringUtils.stringToEnum<BlaBla>('aa', BlaBla.values),

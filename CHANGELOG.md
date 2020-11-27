@@ -1,3 +1,14 @@
+## [0.4.8] - 2020.11.27
+
+* MySqlDb
+** traceDataLength can be set in constructor
+** traceDataLength can be set in configuration
+** traceSql(): for SELECT statements the trace is
+   split by 'WHERE' if not enough space
+* StringUtils:
+** limitString(): parameters may be null
+
+
 ## [0.4.7] - 2020.11.17
 
 * FileSync

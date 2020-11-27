@@ -1,9 +1,8 @@
 import 'dart:async';
 
+import 'package:dart_bones/dart_bones.dart';
 import 'package:meta/meta.dart';
 import 'package:mysql1/mysql1.dart';
-
-import '../../dart_bones.dart';
 
 typedef CallbackOnSingleRow = Future<bool> Function(List<dynamic> row);
 
@@ -40,7 +39,8 @@ class MySqlDb {
   String dbCode;
   String dbHost;
   int dbPort;
-  int traceDataLength = 80;
+  int traceDataLength;
+  String sqlTracePrefix;
   bool _throwOnError = false;
   Results _lastResults;
   MySqlConnection _dbConnection;
@@ -53,6 +53,8 @@ class MySqlDb {
       @required this.dbCode,
       this.dbHost = 'localhost',
       this.dbPort = 3306,
+      this.traceDataLength = 80,
+      this.sqlTracePrefix,
       @required this.logger});
 
   /// Constructor. Builds the instance from the [configuration] data.
@@ -64,6 +66,8 @@ class MySqlDb {
     dbHost = configuration.asString('host',
         section: section, defaultValue: 'localhost');
     dbPort = configuration.asInt('port', section: section, defaultValue: 3306);
+    traceDataLength = configuration.asInt('traceDataLength',
+        section: section, defaultValue: 80);
   }
 
   bool get hasConnection => _dbConnection != null;
@@ -442,7 +446,30 @@ class MySqlDb {
 
   /// Writes the [sql] string with its parameters to the log, limited by [traceDataLength].
   bool traceSql(String sql, List<dynamic> params) {
-    logger.log(StringUtils.limitString(sql ?? 'null', traceDataLength));
+    String msg;
+    if (sql == null) {
+      msg = 'null';
+    } else {
+      msg = StringUtils.limitString(sql, traceDataLength);
+    }
+    if ((msg.startsWith('SELECT') || msg.startsWith('select')) &&
+        msg.length >= traceDataLength) {
+      var ix1 = sql.indexOf('WHERE');
+      if (ix1 < 0) {
+        ix1 = sql.indexOf('where');
+      }
+      if (ix1 > 0) {
+        final limit = (traceDataLength / 2).round();
+        msg = StringUtils.limitString(sql.substring(0, ix1), limit);
+        if (!msg.endsWith('.')) {
+          msg += '..';
+        }
+        msg += '\n' +
+            StringUtils.limitString(
+                sql.substring(ix1), traceDataLength - msg.length);
+      }
+    }
+    logger.log((sqlTracePrefix ?? '') + msg);
     if (params != null) {
       final buffer = StringBuffer('params: ');
       var ix = -1;

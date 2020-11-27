@@ -363,10 +363,11 @@ class StringUtils {
   /// [string] the string to convert, e.g. "abc123"
   /// [maxSize]: the maximum length, e.g. 5
   /// [ellipsis]: null or a suffix which signals the cut of the [string]
-  /// return the limited string, e.g. "ab..."
+  /// return [string] (if enough space or null) or the limited string, e.g. "ab..."
   static String limitString(String string, maxSize, {String ellipsis = '...'}) {
     String rc;
-    if (string.length > maxSize) {
+    maxSize ??= 80;
+    if (string != null && string.length > maxSize) {
       ellipsis ??= '';
       if (maxSize < ellipsis.length + 1) {
         rc = string.substring(0, maxSize);
@@ -374,7 +375,8 @@ class StringUtils {
         rc = string.substring(0, maxSize - ellipsis.length) + ellipsis;
       }
     }
-    return rc ?? string;
+    rc ??= string;
+    return rc;
   }
 
   /// Tests whether the [argument] has the [longName] or the [shortName] and a pattern.
