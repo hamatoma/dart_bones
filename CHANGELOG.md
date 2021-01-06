@@ -1,3 +1,8 @@
+## [0.4.9] - 2021.01.06
+
+* file_sync_io: dart analyzer info issues corrected
+* mysql_db_test: dart analyzer info issues corrected
+
 ## [0.4.8] - 2020.11.27
 
 * MySqlDb

@@ -458,8 +458,8 @@ void main() async {
   group('trace', () {
     test('sql-trace-limit', () async {
       logger.clear();
-      await db.readAll('select * from users WHERE users.user_name != ' +
-          "'123456789 123456789 123456789 123456789 123456789 123456789 " +
+      await db.readAll('select * from users WHERE users.user_name != '
+          "'123456789 123456789 123456789 123456789 123456789 123456789 "
           "123456789 123456789 123456789 123456789 123456789 123456789 '");
       expect(logger.contains('sql: select * from users ..'), isTrue);
       expect(
@@ -469,8 +469,8 @@ void main() async {
     });
     test('sql-trace-limit-lowercase', () async {
       logger.clear();
-      await db.readAll('select * from users where users.user_name != ' +
-          "'123456789 123456789 123456789 123456789 123456789 123456789 " +
+      await db.readAll('select * from users where users.user_name != '
+          "'123456789 123456789 123456789 123456789 123456789 123456789 "
           "123456789 123456789 123456789 123456789 123456789 123456789 '");
       expect(logger.contains('sql: select * from users ..'), isTrue);
       expect(

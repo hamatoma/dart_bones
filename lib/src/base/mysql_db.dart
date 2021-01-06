@@ -366,7 +366,7 @@ class MySqlDb {
     int rc;
     var found = false;
     final results =
-    await readAll(sql, params: params, throwOnError: throwOnError);
+        await readAll(sql, params: params, throwOnError: throwOnError);
     if (results != null) {
       for (var row in results) {
         found = true;
@@ -623,10 +623,11 @@ class MySqlDb {
   /// Converts the [sql] statement with named parameters to a SQL statement with
   /// positional parameters and build the parameter list from a [mapParams].
   /// return: null: error found otherwise: the changed SQL and the parameter list
-  static SqlAndParamList convertNamedParams({@required String sql,
-    @required Map<String, dynamic> mapParams,
-    @required BaseLogger logger,
-    bool ignoreError = false}) {
+  static SqlAndParamList convertNamedParams(
+      {@required String sql,
+      @required Map<String, dynamic> mapParams,
+      @required BaseLogger logger,
+      bool ignoreError = false}) {
     SqlAndParamList rc;
     final listParams = [];
     final regExp = RegExp(r':\w+');

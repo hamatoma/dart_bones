@@ -338,7 +338,7 @@ class FileSync {
   /// Returns the parent directory of the [path].
   /// Example: dirname('abc/def.txt') == 'abc/'
   /// [trailingSlash]: if false the trailing slash will not be part of the result
-  static String parentOf(String path, {bool trailingSlash: true}) {
+  static String parentOf(String path, {bool trailingSlash = true}) {
     final ix = path.lastIndexOf(sep);
     final rc = ix < 0 ? '' : path.substring(0, ix + (trailingSlash ? 1 : 0));
     return rc;
