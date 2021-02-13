@@ -6,6 +6,17 @@ import 'package:mysql1/mysql1.dart';
 
 typedef CallbackOnSingleRow = Future<bool> Function(List<dynamic> row);
 
+class ColumnInfo {
+  final String name;
+  final MysqlType type;
+  final String typeName;
+  final int size;
+  final String options;
+  final String defaultValue;
+  ColumnInfo(this.name,
+      {this.type, this.typeName, this.size, this.options, this.defaultValue});
+}
+
 class DbException implements Exception {
   String message;
   String sql;
@@ -34,6 +45,53 @@ class DbException implements Exception {
 }
 
 class MySqlDb {
+  static final _regExpTextSize = RegExp(r'^\w+\((\d+)\)');
+  static const _typePrefixes = <String>[
+    'int',
+    'dec',
+    'text',
+    'timestamp',
+    'datetime',
+    'date',
+    'char',
+    'varchar',
+    'tinytext',
+    'double',
+    'decimal',
+    'blob',
+    'bit',
+    'bool',
+    'tinyint',
+    'smallint',
+    'mediumint',
+    'bigint',
+    'float',
+    'time',
+    'year',
+  ];
+  static const _typeOfPrefix = <MysqlType>[
+    MysqlType.int,
+    MysqlType.decimal,
+    MysqlType.text,
+    MysqlType.timestamp,
+    MysqlType.datetime,
+    MysqlType.date,
+    MysqlType.text,
+    MysqlType.text,
+    MysqlType.text,
+    MysqlType.double,
+    MysqlType.decimal,
+    MysqlType.blob,
+    MysqlType.bit,
+    MysqlType.bool,
+    MysqlType.int,
+    MysqlType.int,
+    MysqlType.int,
+    MysqlType.int,
+    MysqlType.double,
+    MysqlType.time,
+    MysqlType.year,
+  ];
   String dbName;
   String dbUser;
   String dbCode;
@@ -44,8 +102,12 @@ class MySqlDb {
   String sqlTracePrefix;
   bool _throwOnError = false;
   Results _lastResults;
+
   MySqlConnection _dbConnection;
+
   final BaseLogger logger;
+
+  List<String> tables;
 
   /// Constructor
   MySqlDb(
@@ -195,6 +257,90 @@ class MySqlDb {
         throw DbException('execute()', sql, params, error.toString());
       }
     }
+    return rc;
+  }
+
+  /// Returns all columns of a [table].
+  Future<Map<String, ColumnInfo>> getColumns(String table) async {
+    final rc = <String, ColumnInfo>{};
+    final records = await readAllAsLists('show columns in $table;');
+    if (records != null && records.isNotEmpty) {
+      // Find the first key:
+      records.forEach((column) {
+        final name = column['Field'];
+        final typeName = column['Type'].toString();
+        final type = getType(typeName);
+        var size;
+        if (type == MysqlType.text) {
+          var match = _regExpTextSize.firstMatch(typeName);
+          if (match != null) {
+            size = int.parse(match.group(1));
+          } else {
+            if (typeName.startsWith('small')) {
+              size = 255;
+            } else if (typeName.startsWith('text')) {
+              size = 65535;
+            } else if (typeName.startsWith('medium')) {
+              size = 16777215;
+            } else if (typeName.startsWith('long')) {
+              size = 4294967295;
+            }
+          }
+        }
+        var options = column['Key'].contains('PRI') ? 'primary' : '';
+        options += column['Null'] == 'YES' ? ' null' : ' notnull';
+        if (column['Extra'].contains('auto_increment')) {
+          options += ' auto_increment';
+        }
+        rc[name] = ColumnInfo(
+          name,
+          type: type,
+          typeName: typeName,
+          size: size,
+          options: options,
+          defaultValue: column['Default'].toString(),
+        );
+      });
+    }
+    return rc;
+  }
+
+  /// Returns all table names of the database.
+  Future<List<String>> getTables() async {
+    var rc = <String>[];
+    final records = await readAllAsLists('show tables;');
+    if (records != null && records.isNotEmpty) {
+      // Find the first key:
+      records.forEach((table) {
+        table.forEach((item) => rc.add(item));
+      });
+      tables ??= rc;
+    }
+    return rc;
+  }
+
+  /// Returns the mysql type of a string given by the column "Type" of "show columns".
+  MysqlType getType(String typeName) {
+    var type = MysqlType.undef;
+    assert(_typePrefixes.length == _typeOfPrefix.length);
+    for (var ix = 0; ix < _typeOfPrefix.length; ix++) {
+      if (typeName.startsWith(_typePrefixes[ix])) {
+        type = _typeOfPrefix[ix];
+        break;
+      }
+    }
+    return type;
+  }
+
+  /// Tests whether the database has a table named [name].
+  /// [forceUpdate]: false: the tables are read only if needed. true: the
+  /// tables are read always.
+  Future<bool> hasTable(String name, {bool forceUpdate = false}) async {
+    bool rc;
+    if (forceUpdate || tables == null) {
+      await getTables();
+    }
+    rc = tables.contains(name);
     return rc;
   }
 
@@ -661,6 +807,22 @@ class MySqlDb {
     }
     return rc;
   }
+}
+
+enum MysqlType {
+  undef,
+  int,
+  text,
+  timestamp,
+  date,
+  datetime,
+  time,
+  double,
+  decimal,
+  blob,
+  bit,
+  bool,
+  year,
 }
 
 class SqlAndParamList {

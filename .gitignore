@@ -76,3 +76,4 @@ build/
 coverage/
 pubspec.lock
 /test/coverage_helper_test.dart
+/Publish

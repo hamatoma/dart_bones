@@ -5,8 +5,8 @@ const SQL_ERROR = 'You have an error in your SQL syntax';
 
 Future<MySqlDb> prepare(BaseLogger logger) async {
   final db = MySqlDb(
-      dbName: 'testdb',
-      dbUser: 'test',
+      dbName: 'dbunittest',
+      dbUser: 'unittest',
       dbCode: 'TopSecret',
       dbHost: 'localhost',
       dbPort: 3306,
@@ -453,6 +453,34 @@ void main() async {
           sql,
           equals(
               'insert into users(group_id,user_name,user_info) values (?,?,?);'));
+    });
+    test('getTables', () async{
+      final tables = await db.getTables();
+      expect(tables, isNotNull);
+      expect(tables, isNotEmpty);
+    });
+    test('hasTable', () async{
+      expect(await db.hasTable('groups'), isTrue);
+      expect(await db.hasTable('groups.not.known', forceUpdate: true), isFalse);
+    });
+    test('getColumns', () async{
+      logger.clear();
+      final columns = await db.getColumns('users');
+      expect(columns, isNotNull);
+      expect(columns.containsKey('user_id'), isTrue);
+      final column = columns['user_id'];
+      expect(column.name, equals('user_id'));
+      expect(column.type, MysqlType.int);
+      expect(column.typeName, 'int(10) unsigned');
+      expect(column.size, isNull);
+      expect(column.options, 'primary notnull auto_increment');
+      expect(column.defaultValue, 'null');
+      expect(columns['user_name'].size, 200);
+      expect(columns['user_name'].typeName, 'varchar(200)');
+      expect(columns['created'].typeName, 'datetime');
+      expect(columns['created'].options, ' null');
+      expect(columns['created'].defaultValue, 'current_timestamp()');
+      expect(columns['user_info'].size, 65535);
     });
   });
   group('trace', () {
