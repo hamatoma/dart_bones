@@ -1,6 +1,6 @@
 name: dart_bones
 description: Helper classes for Dart programming. StringUtils for string handling, file_sync for file helpers...
-version: 0.4.10
+version: 0.4.11
 homepage: https://github.com/hamatoma/dart_bones
 
 environment:
@@ -8,12 +8,12 @@ environment:
   #flutter: ">=1.17.0 <2.0.0"
 
 dependencies:
-  meta: "^1.1.8"
+  meta: "^1.2.4"
   sprintf: "^5.0.0"
   mysql1: "^0.17.1"
-  http: "^0.13.0"
-  mailer: "^3.2.1"
-  yaml: "^3.0.0"
+  http: "^0.12.2"
+  mailer: "^3.3.0"
+  yaml: "^2.2.1"
   #flutter:
   #  sdk: flutter
 

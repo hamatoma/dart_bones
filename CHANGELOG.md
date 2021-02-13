@@ -1,3 +1,7 @@
+## [0.4.11] - 2021.02.13
+
+* removed null safety versions
+
 ## [0.4.10] - 2021.02.13
 
 * mysql_db_test: fix: readOneString() crashes if no record is found
