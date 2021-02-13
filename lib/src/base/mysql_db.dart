@@ -39,6 +39,7 @@ class MySqlDb {
   String dbCode;
   String dbHost;
   int dbPort;
+  int timeout;
   int traceDataLength;
   String sqlTracePrefix;
   bool _throwOnError = false;
@@ -55,6 +56,7 @@ class MySqlDb {
       this.dbPort = 3306,
       this.traceDataLength = 80,
       this.sqlTracePrefix,
+      this.timeout = 30,
       @required this.logger});
 
   /// Constructor. Builds the instance from the [configuration] data.
@@ -127,7 +129,8 @@ class MySqlDb {
               port: dbPort,
               user: dbUser,
               db: dbName,
-              password: dbCode));
+              password: dbCode,
+              timeout: Duration(seconds: timeout)));
       if (conn == null) {
         final msg = 'cannot connect: db: $dbName user: $dbUser';
         if (throwOnError ?? _throwOnError) {
@@ -421,17 +424,19 @@ class MySqlDb {
     String rc;
     final results = await readAll(sql, params: params);
     var found = false;
-    for (var row in results) {
-      found = true;
-      if (rc == null) {
-        rc = row.values[0].toString();
-      } else {
-        logger.error('more than one record found:\n$sql');
-        if (throwOnError ?? _throwOnError) {
-          throw DbException(
-              'readOneString()', sql, params, 'more than one record');
+    if (results != null) {
+      for (var row in results) {
+        found = true;
+        if (rc == null) {
+          rc = row.values[0].toString();
+        } else {
+          logger.error('more than one record found:\n$sql');
+          if (throwOnError ?? _throwOnError) {
+            throw DbException(
+                'readOneString()', sql, params, 'more than one record');
+          }
+          break;
         }
-        break;
       }
     }
     if (!found && !nullAllowed) {

@@ -479,6 +479,13 @@ void main() async {
           isTrue);
     });
   });
+  group('fixes', (){
+    test('readOneString-missing record', () async {
+      logger.clear();
+      final result = await db.readOneString("select * from users where users.user_name 'xxx'");
+      expect(result, isNull);
+    });
+  });
 }
 
 Future<int> countOfCloudName(MySqlDb db, String name) async {

@@ -1,3 +1,8 @@
+## [0.4.10] - 2021.02.13
+
+* mysql_db_test: fix: readOneString() crashes if no record is found
+* dependencies updated
+
 ## [0.4.9] - 2021.01.06
 
 * file_sync_io: dart analyzer info issues corrected
