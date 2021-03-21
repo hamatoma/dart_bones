@@ -1,5 +1,6 @@
 import 'package:meta/meta.dart';
 
+const LEVEL_DEBUG = 9;
 const LEVEL_DETAIL = 2;
 const LEVEL_FINE = 4;
 const LEVEL_LOOP = 3;

@@ -1,3 +1,14 @@
+## [0.4.13] - 2021.03.22
+
+* base_logger: new: LEVEL_DEBUG
+* new: KissRandom: a pseudo random generator based on the KISS algorithm.
+* new: CryptoEngine: for encryption/decryption using a pseudo random generator
+* new: os_service: (for linux): groupExists(), groupId(), install(), installService()... 
+* logger_io:
+  ** Fix in logToFile: now with date/time and '\n'
+* mysql_db: new in configuration: timeout
+* StringUtils: dateToString(): more placeholders
+
 ## [0.4.12] - 2021.02.13
 
 * MySqlDb
@@ -19,8 +30,8 @@
 ## [0.4.8] - 2020.11.27
 
 * MySqlDb
-** traceDataLength can be set in constructor
-** traceDataLength can be set in configuration
+** traceDataLength can be set in the constructor
+** traceDataLength can be set in the configuration
 ** traceSql(): for SELECT statements the trace is
    split by 'WHERE' if not enough space
 * StringUtils:

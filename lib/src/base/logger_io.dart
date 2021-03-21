@@ -24,7 +24,8 @@ class Logger extends BaseLogger {
   /// Writes a string into the logfile.
   /// [message] the line to write
   void logToFile(String message) {
-    _file.writeAsStringSync(message,
+    final date = StringUtils.dateToString('%!');
+    _file.writeAsStringSync('$date $message\n',
         flush: true, mode: FileMode.writeOnlyAppend);
   }
 }

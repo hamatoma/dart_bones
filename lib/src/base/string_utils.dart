@@ -23,10 +23,6 @@ class StringUtils {
       RegExp(r'^[+-]?(?:(?:0[xX]([\da-fA-F]+))|(?:0[oO]([0-7]+))|(\d+))$');
 
   // ......................................a..b.......1...........1b.c.......2......2c.3...3a
-  /// Converts an [enumValue] to a string.
-  static String enumToString(Object enumValue) =>
-      enumValue.toString().split('.').last;
-
   /// Converts a [text] into an integer.
   /// [defaultValue] is the return value if [text] is not an integer
   static double asFloat(String text, {double defaultValue}) {
@@ -197,6 +193,24 @@ class StringUtils {
 
   /// Converts a date into a string with a given [format] like the unix command date.
   /// [format]: a string with placeholders, e.g. '%Y.%m.%d-%H:%M:%S'
+  /// Format placeholders:
+  /// '%!': full (same as '%Y.%m.%d-%H:%M:%S')
+  /// '%%': '%'
+  /// '%d': day (01..31)
+  /// '%F': date (same as '%Y-%m-%d')
+  /// '%H': hours (00..23)
+  /// '%i': iso (same as '%Y-%m-%d %H:%M:%S')
+  /// '%j': day of the year: (001..366)
+  /// '%M': minutes (00..59)
+  /// '%m': month (01..12)
+  /// '%n': '\n'
+  /// '%R': time (same as '%H:%M')
+  /// '%S': seconds (00.59)
+  /// '%s': seconds since epoch
+  /// '%W': day of the week (0..6) 0 is monday
+  /// '%w': week no (01..53)
+  /// '%Y': year (e.g. 2021)
+  ///
   /// [date]: the date to convert: if null the current date and time is taken
   static String dateToString(String format, [DateTime date]) {
     date ??= DateTime.now();
@@ -230,7 +244,69 @@ class StringUtils {
           case 'S':
             rc.write(sprintf('%02d', [date.second]));
             break;
+          case '!':
+            rc.write(sprintf('%d.%02d.%02d-%02d:%02d:%02d', [
+              date.year,
+              date.month,
+              date.day,
+              date.hour,
+              date.minute,
+              date.second
+            ]));
+            break;
+          case 'i':
+            rc.write(sprintf('%d-%02d-%02d %02d:%02d:%02d', [
+              date.year,
+              date.month,
+              date.day,
+              date.hour,
+              date.minute,
+              date.second
+            ]));
+            break;
+          case 'j':
+            final date2 = DateTime(date.year);
+            final date3 = DateTime(date.year, date.month, date.day);
+            final day = date3.millisecondsSinceEpoch ~/ 86400000;
+            final day2 = date2.millisecondsSinceEpoch ~/ 86400000;
+            rc.write(sprintf('%03d', [1 + day - day2]));
+            break;
+          case '%':
+            rc.write('%');
+            break;
+          case 'F':
+            rc.write(
+                sprintf('%d-%02d-%02d', [date.year, date.month, date.day]));
+            break;
+          case 'n':
+            rc.write('\n');
+            break;
+          case 'R':
+            rc.write(sprintf('%02d:%02d', [date.hour, date.minute]));
+            break;
+          case 's':
+            rc.write((date.millisecondsSinceEpoch ~/ 1000).toString());
+            break;
+          case 'w':
+            rc.write(date.weekday.toString());
+            break;
+          case 'W':
+            // @see: wikipedia.org/wiki/ISO_week_date#Weeks_per_year
+            final year = date.year;
+            final date2 = DateTime(year, 1, 1);
+            final date3 = DateTime(year, date.month, date.day);
+            final dayOfYear = 1 +
+                date3.millisecondsSinceEpoch ~/ 86400000 -
+                date2.millisecondsSinceEpoch ~/ 86400000;
+            int p(int y) => (y + y ~/ 4 - y ~/ 100 + y ~/ 400) % 7;
+            int weeks(int y) => 52 + (p(y) == 4 || p(y - 1) == 3 ? 1 : 0);
+            final week = (10 + dayOfYear - date3.weekday - 1) ~/ 7;
+            final weekNo =
+                week < 1 ? weeks(year - 1) : (week > weeks(year) ? 1 : week);
+            rc.write(sprintf('%02d', [weekNo]));
+            break;
           default:
+            rc.write('%');
             rc.write(cc2);
             break;
         }
@@ -310,6 +386,10 @@ class StringUtils {
     }
     return rc ?? input;
   }
+
+  /// Converts an [enumValue] to a string.
+  static String enumToString(Object enumValue) =>
+      enumValue.toString().split('.').last;
 
   /// Converts a glob [pattern] to a regular expression string.
   /// [pattern]: a string with wildcards '*' and '?' and char classes, e.g. "[a-z0-9\]"

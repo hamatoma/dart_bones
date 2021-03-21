@@ -132,6 +132,8 @@ class MySqlDb {
     dbPort = configuration.asInt('port', section: section, defaultValue: 3306);
     traceDataLength = configuration.asInt('traceDataLength',
         section: section, defaultValue: 80);
+    timeout = configuration.asInt('timeout',
+        section: section, defaultValue: 30);
   }
 
   bool get hasConnection => _dbConnection != null;
@@ -183,6 +185,7 @@ class MySqlDb {
   /// return: true: success
   Future<bool> connect({bool throwOnError}) async {
     bool rc;
+    var reported = false;
     try {
       logger.log('connect to $dbHost:$dbPort-$dbName:$dbUser', LEVEL_SUMMERY);
       final conn = _dbConnection = await MySqlConnection.connect(
@@ -192,7 +195,7 @@ class MySqlDb {
               user: dbUser,
               db: dbName,
               password: dbCode,
-              timeout: Duration(seconds: timeout)));
+              timeout: timeout == null ? null : Duration(seconds: timeout)));
       if (conn == null) {
         final msg = 'cannot connect: db: $dbName user: $dbUser';
         if (throwOnError ?? _throwOnError) {
@@ -206,10 +209,14 @@ class MySqlDb {
     } catch (exc, stack) {
       final msg = 'cannot connect (2): db: $dbName user: $dbUser';
       logger.error(msg);
+      reported = true;
       if (throwOnError ?? _throwOnError) {
         throw DbException(msg, null, null, '$exc\n$stack');
       }
       rc = false;
+    }
+    if (! reported && _dbConnection == null){
+      logger.error('cannot connect (3): db: $dbName user: $dbUser');
     }
     return rc;
   }
@@ -636,7 +643,7 @@ class MySqlDb {
   }
 
   /// Executes an UPDATE statement for one record.
-  /// [sql] the sql statement, e.g. 'insert into users (user_name) values (?);'
+  /// [sql] the sql statement, e.g. 'update users set user_name=? where user_id=?;'
   /// [params] null or the positional parameters, e.g. ['john']
   /// [throwOnError]: null: use _throwOnError true: if an error occurs
   /// an exception is thrown. false: return value respects an error

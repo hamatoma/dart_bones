@@ -73,6 +73,7 @@ void main() async {
   //group('common-because-not-concurrent', () {
   group('Basics', () {
     test('connect-fail', () async {
+      logger.clear();
       final db2 = MySqlDb(
           dbName: 'testdb',
           dbUser: 'test',
@@ -81,6 +82,7 @@ void main() async {
           dbPort: 3306,
           logger: logger);
       expect(await db2.connect(), isFalse);
+      expect(logger.contains('cannot connect'), isTrue);
     });
     test('execute-fail-sql', () async {
       logger.log('expecting an error: wrong syntax');

@@ -19,3 +19,4 @@ export 'src/base/mysql_db.dart';
 export 'src/base/process_sync.dart';
 export 'src/base/string_utils.dart';
 export 'src/base/validation.dart';
+export 'src/base/os_service.dart';

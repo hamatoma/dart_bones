@@ -25,8 +25,29 @@ void main() {
     });
     test('dateToString-fix', () {
       final date = DateTime(2019, 3, 7, 3, 45, 59);
-      var string = StringUtils.dateToString('%!%Y.%m.%d-%H:%M:%S%', date);
-      expect('!2019.03.07-03:45:59%', equals(string));
+      var string = StringUtils.dateToString('%~%Y.%m.%d-%H:%M:%S%', date);
+      expect('%~2019.03.07-03:45:59%', equals(string));
+    });
+    test('dateToString-known date', () {
+      final date = DateTime(2019, 3, 7, 3, 45, 59);
+      var string = StringUtils.dateToString('%~%Y.%m.%d-%H:%M:%S%', date);
+      expect('%~2019.03.07-03:45:59%', equals(string));
+      expect(1, 7 ~/ 4);
+      expect(
+          StringUtils.dateToString('%!', date), equals('2019.03.07-03:45:59'));
+      expect(
+          StringUtils.dateToString('%i', date), equals('2019-03-07 03:45:59'));
+      expect(StringUtils.dateToString('%j', date), equals('066'));
+      expect(StringUtils.dateToString('%%', date), equals('%'));
+      expect(StringUtils.dateToString('%F', date), equals('2019-03-07'));
+      expect(StringUtils.dateToString('%n', date), equals('\n'));
+      expect(StringUtils.dateToString('%R', date), equals('03:45'));
+      expect(StringUtils.dateToString('%s', date), equals('1551926759'));
+      expect(StringUtils.dateToString('%w', date), equals('4'));
+      expect(StringUtils.dateToString('%W', DateTime(2016, 11, 5)), equals('44'));
+      expect(StringUtils.dateToString('%W', DateTime(2019, 3, 7)), equals('10'));
+      expect(StringUtils.dateToString('%W', date), equals('10'));
+      expect(StringUtils.dateToString('%W', DateTime(2021, 3, 21)), equals('11'));
     });
     test('dateToString-now', () {
       var string1 = StringUtils.dateToString('%Y.%m.%d-%H:%M:%S');
@@ -383,4 +404,5 @@ void main() {
     });
   });
 }
+
 enum BlaBla { aa, bb, cc }
