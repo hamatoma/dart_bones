@@ -132,8 +132,8 @@ class MySqlDb {
     dbPort = configuration.asInt('port', section: section, defaultValue: 3306);
     traceDataLength = configuration.asInt('traceDataLength',
         section: section, defaultValue: 80);
-    timeout = configuration.asInt('timeout',
-        section: section, defaultValue: 30);
+    timeout =
+        configuration.asInt('timeout', section: section, defaultValue: 30);
   }
 
   bool get hasConnection => _dbConnection != null;
@@ -215,7 +215,7 @@ class MySqlDb {
       }
       rc = false;
     }
-    if (! reported && _dbConnection == null){
+    if (!reported && _dbConnection == null) {
       logger.error('cannot connect (3): db: $dbName user: $dbUser');
     }
     return rc;

@@ -1,5 +1,20 @@
 import 'base_logger.dart';
 
+/// Tests whether all characters of [string] are in the [charClass].
+/// Returns null if all characters are in the charClass, otherwise the first
+/// index of [string] with a character not in [charClass]
+int notInCharClass(CharClass charClass, String string) {
+  int rc;
+  final members = BaseRandom.getCharClassMembers(charClass);
+  for (var ix = 0; ix < string.length; ix++) {
+    if (!members.contains(string[ix])) {
+      rc = ix;
+      break;
+    }
+  }
+  return rc;
+}
+
 abstract class BaseRandom {
   static const MaxInt = 0x100000000;
   static var nextId = 0;
@@ -11,7 +26,8 @@ abstract class BaseRandom {
   static final words = letters + '_';
   static final alphanumerics = decimals + words;
   static final chars64 = alphanumerics + r'$';
-  static final chars95 = r''' !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~''';
+  static final chars95 =
+      r''' !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~''';
   static final chars96 = chars95 + String.fromCharCode(127);
   int id;
   final BaseLogger logger;
@@ -19,6 +35,28 @@ abstract class BaseRandom {
 
   BaseRandom(this.logger) {
     id = ++nextId;
+  }
+
+  /// Returns a list of random bytes with a given [length].
+  List<int> byteList(int length) {
+    final rc = List.filled(length, 0);
+    int value;
+    for (var ix = length - 1; ix >= 4; ix -= 4) {
+      value = next();
+      rc[ix] = value & 0xff;
+      value >>= 8;
+      rc[ix - 1] = value & 0xff;
+      value >>= 8;
+      rc[ix - 2] = value & 0xff;
+      value >>= 8;
+      rc[ix - 3] = value & 0xff;
+    }
+    value = next();
+    for (var ix = length >= 4 ? 3 : length - 1; ix >= 0; ix--) {
+      rc[ix] = value & 0xff;
+      value >>= 8;
+    }
+    return rc;
   }
 
   /// Removes the most significant bits from an multiply operand.
@@ -31,27 +69,7 @@ abstract class BaseRandom {
 
   /// Calculates the next seed.
   int next();
-  /// Returns a list of random bytes with a given [length].
-  List<int> byteList(int length) {
-    final rc = List.filled(length, 0);
-    int value;
-    for (var ix = length - 1; ix >= 4; ix-= 4){
-      value = next();
-      rc[ix] = value & 0xff;
-      value >>= 8;
-      rc[ix-1] = value & 0xff;
-      value >>= 8;
-      rc[ix-2] = value & 0xff;
-      value >>= 8;
-      rc[ix-3] = value & 0xff;
-    }
-    value = next();
-    for (var ix = length >= 4 ? 3 : length - 1; ix >= 0; ix--){
-        rc[ix] = value & 0xff;
-        value >>= 8;
-    }
-    return rc;
-  }
+
   /// Returns a random double with 0 <= rc < 1.
   double nextDouble() {
     final rc = next() / 0xfffffffe;
@@ -60,7 +78,7 @@ abstract class BaseRandom {
 
   /// Returns a random integer with 0 <= rc < [max].
   int nextInt({int max = MaxInt, int min = 0}) {
-    if (max - min > MaxInt){
+    if (max - min > MaxInt) {
       final message = 'BaseRandom.nextInt(): range to large: $min $max';
       logger.error(message);
       throw FormatException(message);
@@ -71,6 +89,47 @@ abstract class BaseRandom {
     }
     return rc;
   }
+
+  /// Returns a random string with a given [length].
+  /// [charClass]: defines the characters of the result.
+  /// [charList] is null or a string with all allowed characters.
+  /// @throws FormatException if [charClass] is custom and [charList] is null.
+  String nextString(int length,
+      [CharClass charClass = CharClass.chars96, String charList]) {
+    var rc = '';
+    charList ??= getCharClassMembers(charClass);
+    if (charList == null) {
+      final message = 'nextString(): missing charList';
+      logger.error(message);
+      throw FormatException(message);
+    }
+    while (length-- > 0) {
+      rc += charList[next() % charList.length];
+    }
+    if (logger.logLevel >= LEVEL_DEBUG) {
+      logger.log('$id: nextString: $rc');
+    }
+    return rc;
+  }
+
+  /// Sets the state to a well known state: the start state or the state of the
+  /// last call of setStart()
+  void reset() {
+    restoreState(resetState);
+  }
+
+  void restoreState(List<int> list);
+
+  List<int> saveState();
+
+  /// Sets the state used in reset().
+  /// Must be called in the constructor of each overloading class.
+  void setResetState() {
+    resetState = saveState();
+  }
+
+  void setSeed(String passphrase);
+
   static String getCharClassMembers(CharClass charClass) {
     String charList;
     switch (charClass) {
@@ -109,45 +168,6 @@ abstract class BaseRandom {
     }
     return charList;
   }
-  /// Returns a random string with a given [length].
-  /// [charClass]: defines the characters of the result.
-  /// [charList] is null or a string with all allowed characters.
-  /// @throws FormatException if [charClass] is custom and [charList] is null.
-  String nextString(int length,
-      [CharClass charClass = CharClass.chars96, String charList]) {
-    var rc = '';
-    charList ??= getCharClassMembers(charClass);
-    if (charList == null ){
-      final message = 'nextString(): missing charList';
-      logger.error(message);
-      throw FormatException(message);
-    }
-    while (length-- > 0) {
-        rc += charList[next() % charList.length];
-    }
-    if (logger.logLevel >= LEVEL_DEBUG) {
-      logger.log('$id: nextString: $rc');
-    }
-    return rc;
-  }
-
-  /// Sets the state to a well known state: the start state or the state of the
-  /// last call of setStart()
-  void reset() {
-    restoreState(resetState);
-  }
-
-  void restoreState(List<int> list);
-
-  List<int> saveState();
-
-  /// Sets the state used in reset().
-  /// Must be called in the constructor of each overloading class.
-  void setResetState() {
-    resetState = saveState();
-  }
-
-  void setSeed(String passphrase);
 }
 
 enum CharClass {
@@ -291,19 +311,4 @@ class KissRandom extends BaseRandom {
       }
     }
   }
-}
-
-/// Tests whether all characters of [string] are in the [charClass].
-/// Returns null if all characters are in the charClass, otherwise the first
-/// index of [string] with a character not in [charClass]
-int notInCharClass(CharClass charClass, String string){
-  int rc;
-  final members = BaseRandom.getCharClassMembers(charClass);
-  for (var ix = 0; ix < string.length; ix++){
-    if (! members.contains(string[ix])){
-      rc = ix;
-      break;
-    }
-  }
-  return rc;
 }
