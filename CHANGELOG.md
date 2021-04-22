@@ -1,3 +1,16 @@
+## [1.0.0] - 2021.04.23
+
+* nullsafty
+* Breaking changes:
+  * string_utils:
+  * class StringUtils removed: all static functions are now "plain" functions
+  * process_sync:
+    * class ProcessSync is now a singleton
+    * static methods are now "normal" methods
+  * file_sync
+    * class FileSync is now a singleton
+    * static methods are now "normal" methods
+
 ## [0.4.13] - 2021.03.22
 
 * base_logger: new: LEVEL_DEBUG

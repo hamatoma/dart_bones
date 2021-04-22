@@ -11,7 +11,6 @@ void main() {
       expect((Validation.isPhoneNumber('+089+1234567')), isFalse);
       expect((Validation.isPhoneNumber('0 bock')), isFalse);
       expect((Validation.isPhoneNumber('')), isFalse);
-      expect((Validation.isPhoneNumber(null)), isFalse);
     });
     test('isEmail', () {
       expect((Validation.isEmail('jonny@example.com')), isTrue);
@@ -31,7 +30,6 @@ void main() {
       expect((Validation.isEmail('@example.com')), isFalse);
       expect((Validation.isEmail('<>@example.com')), isFalse);
       expect((Validation.isEmail('')), isFalse);
-      expect((Validation.isEmail(null)), isFalse);
     });
   });
   group('data types', () {
@@ -45,7 +43,6 @@ void main() {
       expect((Validation.isBool('F')), isTrue);
       expect((Validation.isBool('wrong')), isFalse);
       expect((Validation.isBool('')), isFalse);
-      expect((Validation.isBool(null)), isFalse);
     });
   });
   group('numbers', () {
@@ -65,7 +62,6 @@ void main() {
       expect(Validation.isNat('0XAFFEG01234567890'), isFalse);
       expect(Validation.isNat('0o8'), isFalse);
       expect(Validation.isNat(''), isFalse);
-      expect(Validation.isNat(null), isFalse);
     });
     test('isInt', () {
       expect(Validation.isInt('0'), isTrue);
@@ -89,7 +85,6 @@ void main() {
       expect(Validation.isInt('0XAFFEG01234567890'), isFalse);
       expect(Validation.isInt('0o8'), isFalse);
       expect(Validation.isInt(''), isFalse);
-      expect(Validation.isInt(null), isFalse);
     });
     test('isFloat', () {
       expect(Validation.isFloat('0'), isTrue);
@@ -104,7 +99,6 @@ void main() {
       expect(Validation.isFloat('12.7a'), isFalse);
       expect(Validation.isFloat('/12.7'), isFalse);
       expect(Validation.isFloat(''), isFalse);
-      expect(Validation.isFloat(null), isFalse);
     });
   });
 }

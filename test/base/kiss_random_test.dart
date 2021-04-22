@@ -5,6 +5,7 @@ import 'package:test/test.dart';
 
 void main() {
   final logger = MemoryLogger(LEVEL_FINE);
+  final fileSync = FileSync.initialize(logger);
   test('nextInt', () {
     final random = KissRandom(logger);
     for (var no = 1; no < 100000; no++) {
@@ -74,7 +75,7 @@ void main() {
   });
   test('bytes', () {
     const count = 1 * 1000 * 1000;
-    final fn = FileSync.tempFile('random.data');
+    final fn = fileSync.tempFile('random.data');
     final random = KissRandom(logger);
     final file = File(fn);
     final fp = file.openSync(mode: FileMode.writeOnly);

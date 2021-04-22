@@ -1,22 +1,24 @@
+import 'package:path/path.dart' as package_path;
 import 'package:dart_bones/dart_bones.dart';
 import 'package:dart_bones/src/base/configuration_io.dart' as config_io;
 import 'package:test/test.dart';
 
 void main() {
   final logger = MemoryLogger(LEVEL_FINE);
-  String base;
-  String fnConfig;
-  Configuration config;
+  final _fileSync = FileSync.initialize(logger);
+  var base = '';
+  var fnConfig = '';
+  var config = BaseConfiguration({}, logger);
   setUpAll(() {
-    base = FileSync.tempFile('unittest.config');
-    fnConfig = FileSync.tempFile('test.yaml', subDirs: 'unittest.config');
+    base = _fileSync.tempFile('unittest.config');
+    fnConfig = _fileSync.tempFile('test.yaml', subDirs: 'unittest.config');
     buildConfig(fnConfig);
     config = Configuration(base, 'test', logger);
   });
   group('Basics', () {
     test('basic', () {
       expect(config, isNotNull);
-      expect(config.filename, equals(fnConfig));
+      expect((config as Configuration).filename, equals(fnConfig));
       logger.log('expecting error: does not exist:');
       final config2 = Configuration(base, 'not_exists', logger);
       expect(config2.filename, isNull);
@@ -63,19 +65,19 @@ void main() {
   });
   group('constructors', () {
     test('fromFile', () {
-      final fnConfig2 = FileSync.joinPaths(base, 'sample.yaml');
-      FileSync.toFile(fnConfig2, 'count: 123');
+      final fnConfig2 = package_path.join(base, 'sample.yaml');
+      _fileSync.toFile(fnConfig2, 'count: 123');
       final config2 = Configuration.fromFile(fnConfig2, logger);
       expect(config2.asInt('count'), equals(123));
     });
     test('standard', () {
-      final fnConfig2 = FileSync.joinPaths(base, 'sample.yaml');
-      FileSync.toFile(fnConfig2, 'count: 123');
+      final fnConfig2 = package_path.join(base, 'sample.yaml');
+      _fileSync.toFile(fnConfig2, 'count: 123');
       final config2 = Configuration(base, 'sample.yaml', logger);
       expect(config2.asInt('count'), equals(123));
     });
     test('fromFile', () {
-      final fnConfig2 = FileSync.joinPaths(base, 'sample_not_exist.yaml');
+      final fnConfig2 = package_path.join(base, 'sample_not_exist.yaml');
       final config2 = Configuration.fromFile(fnConfig2, logger);
       expect(config2.asInt('count'), equals(null));
     });
@@ -93,7 +95,7 @@ void main() {
 }
 
 void buildConfig(String filename) {
-  FileSync.toFile(filename, '''# Example configuration
+  FileSync().toFile(filename, '''# Example configuration
 name: "Jonny Doo"
 port: 44
 ignore: true

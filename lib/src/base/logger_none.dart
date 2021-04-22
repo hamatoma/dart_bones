@@ -1,10 +1,8 @@
 import '../../dart_bones.dart';
 
 class Logger extends BaseLogger {
-  String _filename;
-  Logger(String filename, [int logLevel = 1]) : super(logLevel) {
-    _filename = filename;
-  }
+  final String _filename;
+  Logger(this._filename, [int logLevel = 1]) : super(logLevel);
 
   /// Getter of [_filename].
   String filename() => _filename;

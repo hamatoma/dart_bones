@@ -3,9 +3,9 @@ import 'base_logger.dart';
 /// Tests whether all characters of [string] are in the [charClass].
 /// Returns null if all characters are in the charClass, otherwise the first
 /// index of [string] with a character not in [charClass]
-int notInCharClass(CharClass charClass, String string) {
-  int rc;
-  final members = BaseRandom.getCharClassMembers(charClass);
+int? notInCharClass(CharClass charClass, String string) {
+  int? rc;
+  final members = BaseRandom.getCharClassMembers(charClass) ?? '';
   for (var ix = 0; ix < string.length; ix++) {
     if (!members.contains(string[ix])) {
       rc = ix;
@@ -29,9 +29,9 @@ abstract class BaseRandom {
   static final chars95 =
       r''' !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~''';
   static final chars96 = chars95 + String.fromCharCode(127);
-  int id;
+  int id = 0;
   final BaseLogger logger;
-  List<int> resetState;
+  List<int> resetState = <int>[];
 
   BaseRandom(this.logger) {
     id = ++nextId;
@@ -95,7 +95,7 @@ abstract class BaseRandom {
   /// [charList] is null or a string with all allowed characters.
   /// @throws FormatException if [charClass] is custom and [charList] is null.
   String nextString(int length,
-      [CharClass charClass = CharClass.chars96, String charList]) {
+      [CharClass charClass = CharClass.chars96, String? charList]) {
     var rc = '';
     charList ??= getCharClassMembers(charClass);
     if (charList == null) {
@@ -130,8 +130,8 @@ abstract class BaseRandom {
 
   void setSeed(String passphrase);
 
-  static String getCharClassMembers(CharClass charClass) {
-    String charList;
+  static String? getCharClassMembers(CharClass charClass) {
+    String? charList;
     switch (charClass) {
       case CharClass.decimals:
         charList = decimals;

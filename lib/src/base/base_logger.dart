@@ -29,7 +29,7 @@ class BaseLogger {
   /// [message]: the error message
   /// [stackTrace]: the stack trace (given by exceptions)
   /// return: false (can be used for chaining)
-  bool error(String message, {StackTrace stackTrace}) {
+  bool error(String message, {StackTrace? stackTrace}) {
     countErrors++;
     if (errors.length >= _maxErrors) {
       errors.removeAt(0);

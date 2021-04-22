@@ -18,7 +18,7 @@ class Validation {
   /// Allowed: 'true', 'false', 'yes', 'no' 't', 'f' (case insensitive)
   static bool isBool(String text) {
     var rc = false;
-    if (text != null && text.isNotEmpty) {
+    if (text.isNotEmpty) {
       rc = regExprBool.firstMatch(text) != null;
     }
     return rc;
@@ -27,7 +27,7 @@ class Validation {
   /// Tests whether [text] is a valid email address.
   static bool isEmail(String text) {
     var rc = false;
-    if (text != null && text.isNotEmpty) {
+    if (text.isNotEmpty) {
       rc = regExprEMail.firstMatch(text) != null;
     }
     return rc;
@@ -36,7 +36,7 @@ class Validation {
   /// Tests whether [text] is a valid integer.
   static bool isFloat(String text) {
     var rc = false;
-    if (text != null && text.isNotEmpty) {
+    if (text.isNotEmpty) {
       try {
         double.parse(text);
         rc = true;
@@ -50,7 +50,7 @@ class Validation {
   /// Tests whether [text] is a valid integer.
   static bool isInt(String text) {
     var rc = false;
-    if (text != null && text.isNotEmpty) {
+    if (text.isNotEmpty) {
       rc = regExprInt.firstMatch(text) != null;
     }
     return rc;
@@ -59,7 +59,7 @@ class Validation {
   /// Tests whether [text] is a valid integer.
   static bool isNat(String text) {
     var rc = false;
-    if (text != null && text.isNotEmpty) {
+    if (text.isNotEmpty) {
       rc = regExprNat.firstMatch(text) != null;
     }
     return rc;
@@ -68,7 +68,7 @@ class Validation {
   /// Tests whether [text] is a valid phone number.
   static bool isPhoneNumber(String text) {
     var rc = false;
-    if (text != null && text.isNotEmpty) {
+    if (text.isNotEmpty) {
       rc = regExprPhoneNumber.firstMatch(text) != null;
     }
     return rc;

@@ -1,30 +1,30 @@
 import 'dart:io';
 
 import 'package:dart_bones/dart_bones.dart';
-import 'package:meta/meta.dart';
 
 import 'kiss_random.dart';
 
 class CryptoEngine {
-  KissRandom trueRandom;
-  BaseRandom random;
+  KissRandom trueRandom = KissRandom(globalLogger);
+  BaseRandom random = KissRandom(globalLogger);
   final BaseLogger logger;
-  List<int> firstState;
+  List<int> firstState = <int>[];
   CryptoEngine(
-      {this.random,
-      @required this.logger,
-      String passPhrase,
+      {BaseRandom? random,
+      required this.logger,
+      String? passPhrase,
       bool usePseudoRandomSalt = false}) {
     if (random == null && passPhrase == null) {
       logger.error('CryptoEngine(: logger = licence = null');
       passPhrase = 'TopSecret+LostInSpace.4711';
     }
-    random ??= KissRandom(logger);
-    trueRandom = KissRandom(logger);
-    if (passPhrase != null) {
-      random.setSeed(passPhrase);
+    if (random != null) {
+      this.random = random;
     }
-    firstState = random.saveState();
+    if (passPhrase != null) {
+      random?.setSeed(passPhrase);
+    }
+    firstState = this.random.saveState();
     if (!usePseudoRandomSalt) {
       trueRandom.setSeed(DateTime.now().toString() +
           Platform.localeName +
@@ -39,7 +39,7 @@ class CryptoEngine {
   String decrypt(String encryptedText,
       {int saltLength = 4,
       CharClass charClass = CharClass.chars95,
-      String charSetMembers}) {
+      String? charSetMembers}) {
     var rc = '';
     final salt = encryptedText.substring(0, saltLength);
     final encryptedText2 = encryptedText.substring(saltLength);
@@ -64,15 +64,17 @@ class CryptoEngine {
       }
     } else {
       // the charset is not ordered like ASCII:
-      final membersLength = charSetMembers.length;
+      // charSetMembers cannot be null!
+      final membersLength = charSetMembers?.length ?? 1;
       for (var ix = 0; ix < encryptedText2.length; ix++) {
-        final index = charSetMembers.indexOf(encryptedText2[ix]);
+        final index = charSetMembers?.indexOf(encryptedText2[ix]) ?? -1;
         if (index < 0) {
           rc += encryptedText2[ix];
         } else {
           final rand = random.nextInt(max: membersLength);
           final value = (index + membersLength - rand) % membersLength;
-          rc += charSetMembers[value];
+          // charSetMembers cannot be null!
+          rc += charSetMembers == null ? '' : charSetMembers[value];
         }
       }
     }
@@ -85,7 +87,10 @@ class CryptoEngine {
   String encrypt(String clearText,
       {int saltLength = 4,
       CharClass charClass = CharClass.chars95,
-      String charSetMembers}) {
+      String charSetMembers = ''}) {
+    if (charSetMembers.isEmpty) {
+      charSetMembers = BaseRandom.getCharClassMembers(charClass) ?? '';
+    }
     var rc = saltLength == 0 ? '' : trueRandom.nextString(saltLength);
     final currentState = firstState.toList();
     currentState[0] =

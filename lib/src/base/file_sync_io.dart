@@ -1,19 +1,30 @@
 import 'dart:io';
 
+import 'package:path/path.dart' as package_path;
 import 'package:sprintf/sprintf.dart';
 
 import '../../dart_bones.dart';
+import 'string_utils.dart' as string_utils;
 
 /// Implements static functions for files and directories in the sync variant.
 class FileSync {
   static final sep = Platform.pathSeparator;
   static final currentDirSep = '.' + Platform.pathSeparator;
+  static FileSync? _instance;
   static final tempDir = Platform.isLinux ? '/tmp' : 'c:\\temp';
-  static BaseLogger _logger;
+  BaseLogger _logger;
+
+  /// The public constructor.
+  factory FileSync() {
+    return _instance ??= FileSync._internal(globalLogger);
+  }
+
+  /// Internal constructor
+  FileSync._internal(this._logger);
 
   /// Changes the current directory to [path].
   /// Returns true on success.
-  static bool chdir(String path, {bool ignoreErrors = false}) {
+  bool chdir(String path, {bool ignoreErrors = false}) {
     var rc = true;
     try {
       Directory.current = Directory(path);
@@ -21,9 +32,9 @@ class FileSync {
       rc = false;
       if (!ignoreErrors) {
         if (!isDir(path) && !path.endsWith('unittest.trigger.chdir.error')) {
-          _logger?.error('cannot change to not existing directory $path');
+          _logger.error('cannot change to not existing directory $path');
         } else {
-          _logger?.error('cannot chdir to $path: $exc');
+          _logger.error('cannot chdir to $path: $exc');
         }
       }
     }
@@ -31,30 +42,30 @@ class FileSync {
   }
 
   /// Changes the permission rights of [filename] to [mode].
-  static void chmod(String filename, int mode) {
+  void chmod(String filename, int mode) {
     final args = [
       sprintf('0%o', [mode]),
       filename
     ];
-    _logger?.log('chmod ' + args.join(' '), LEVEL_DETAIL);
+    _logger.log('chmod ' + args.join(' '), LEVEL_DETAIL);
     Process.runSync('/bin/chmod', args);
   }
 
   /// Changes the owner (und group) of the file [filename].
-  static void chown(String filename, int owner, {int group}) {
+  void chown(String filename, int owner, {int? group}) {
     var user = owner.toString();
     if (group != null) {
       user += ':$group';
     }
     final args = [user, filename];
-    _logger?.log('chown ' + args.join(' '), LEVEL_DETAIL);
+    _logger.log('chown ' + args.join(' '), LEVEL_DETAIL);
     Process.runSync('/bin/chown', args);
   }
 
   /// Deletes all entries of a [path].
   /// [testSuccess] true: it will be tested whether the directory is really empty
   /// result: true: [path] is a directory. if [testSuccess]: the directory is empty
-  static bool clearDirectory(String path, {testSuccess = false}) {
+  bool clearDirectory(String path, {testSuccess = false}) {
     final directory = Directory(path);
     var rc = directory.existsSync();
     if (rc) {
@@ -74,7 +85,7 @@ class FileSync {
   /// [files] a list of files: if the entry ends with '/' this is an directory,
   /// e.g. ['dir1/file1', dir2/file2', 'dir1_1/']
   /// content of the created files is the filename with relative path (entry of [files])
-  static void createTree(String base, List<String> files) {
+  void createTree(String? base, List<String> files) {
     base ??= tempDir;
     ensureDirectory(base);
     if (!base.endsWith(sep)) {
@@ -85,7 +96,7 @@ class FileSync {
       if (file.endsWith('/')) {
         ensureDirectory(full);
       } else {
-        final parent = parentOf(full);
+        final parent = package_path.dirname(full);
         ensureDirectory(parent);
         toFile(full, file);
       }
@@ -98,8 +109,8 @@ class FileSync {
   /// [owner] the UID of the owner
   /// [group] the GID of the owner group
   /// [clear] true: the directory will be cleared (all entries inside will be deleted)
-  static void ensureDirectory(String path,
-      {int mode, int owner, int group, bool clear = false}) {
+  void ensureDirectory(String path,
+      {int? mode, int? owner, int? group, bool clear = false}) {
     // we do not handle '/':
     if (path != '/') {
       if (path.endsWith(sep)) {
@@ -107,14 +118,14 @@ class FileSync {
       }
       final dir = Directory(path);
       if (!dir.existsSync()) {
-        _logger?.log('creating $path');
+        _logger.log('creating $path');
         dir.createSync(recursive: true);
       } else if (clear) {
         clearDirectory(path);
       }
 
       if (owner != null || group != null) {
-        chown(path, owner, group: group);
+        chown(path, owner ?? 0, group: group);
       }
       if (mode != null) {
         chmod(path, mode);
@@ -125,9 +136,9 @@ class FileSync {
   /// Removes a file/directory if it exists.
   /// [filename]: the full filename of the file/directory to remove
   /// [recursive]: true: remove the content of a directory too
-  static void ensureDoesNotExist(String filename, {bool recursive = false}) {
+  void ensureDoesNotExist(String filename, {bool recursive = false}) {
     if (FileSystemEntity.isDirectorySync(filename)) {
-      _logger?.log('removing the directory $filename');
+      _logger.log('removing the directory $filename');
       final entry = Directory(filename);
       entry.deleteSync(recursive: recursive);
       if (entry.existsSync() ||
@@ -137,7 +148,7 @@ class FileSync {
     } else if (isLink(filename)) {
       Link(filename).deleteSync();
     } else if (isFile(filename)) {
-      _logger?.log('removing the file $filename');
+      _logger.log('removing the file $filename');
       File(filename).deleteSync();
       if (isFile(filename) ||
           filename.endsWith('unittest.trigger.ensureDoesNotExist.error')) {
@@ -148,8 +159,8 @@ class FileSync {
 
   /// Returns a Directory / File / Link instance of a given [filename].
   /// Returns null if no file exists with this name.
-  static FileSystemEntity entry(String filename) {
-    FileSystemEntity rc;
+  FileSystemEntity? entry(String filename) {
+    FileSystemEntity? rc;
     if (isDir(filename)) {
       rc = Directory(filename);
     } else if (isLink(filename)) {
@@ -163,7 +174,9 @@ class FileSync {
   /// Returns the extension of the [path].
   /// The extension is the part behind the last '.'.
   /// If the only '.' is at the top, the result is '' otherwise the the last part with '.'.
-  static String extensionOf(String path) {
+  /// deprecated: Use extension() from package path
+  @deprecated
+  String extensionOf(String path) {
     var rc = '';
     final ix = path.lastIndexOf('.');
     final ixSlash = path.lastIndexOf(sep);
@@ -174,35 +187,35 @@ class FileSync {
   }
 
   /// Reads the content of a file and return it as a list of lines.
-  static List<String> fileAsList(String filename) {
+  List<String> fileAsList(String filename) {
     final file = File(filename);
     var content = <String>[];
     try {
       content = file.readAsLinesSync();
     } on Exception catch (exc, stack) {
-      _logger?.error('cannot read $filename: ${exc.toString()}',
+      _logger.error('cannot read $filename: ${exc.toString()}',
           stackTrace: stack);
     }
     return content;
   }
 
   /// Reads the content of a file and return it as a string.
-  static String fileAsString(String filename) {
+  String fileAsString(String filename) {
     final file = File(filename);
     var content = '';
     try {
       content = file.readAsStringSync();
     } on Exception catch (exc, stack) {
-      _logger?.error('cannot read $filename: ${exc.toString()}',
+      _logger.error('cannot read $filename: ${exc.toString()}',
           stackTrace: stack);
     }
     return content;
   }
 
-  /// Returns the extension of the [path].
+  /// Returns the node of the [path] without the extension.
   /// The extension is the part behind the last '.'.
   /// If the only '.' is at the top, the result is '' otherwise the the last part with '.'.
-  static String filenameOf(String path) {
+  String filenameOf(String path) {
     var rc = '';
     final ix = path.lastIndexOf('.');
     final ixSlash = path.lastIndexOf(sep);
@@ -223,7 +236,7 @@ class FileSync {
   }
 
   /// Returns a human readable string of a file [size], e.g. '2.389MB'.
-  static String humanSize(int size) {
+  String humanSize(int size) {
     String rc;
     String unit;
     if (size < 1000) {
@@ -248,16 +261,20 @@ class FileSync {
     return rc;
   }
 
+  void initializes(BaseLogger logger) {
+    _instance = FileSync._internal(logger);
+  }
+
   /// Returns true if [path] is a directory.
   /// [path]: the full name of the directory
-  static bool isDir(path) {
+  bool isDir(path) {
     var rc = FileSystemEntity.isDirectorySync(path);
     return rc;
   }
 
   /// Returns true if [path] is a "normal" file.
   /// [path]: the full name of the directory
-  static bool isFile(path) {
+  bool isFile(path) {
     var rc =
         FileSystemEntity.isFileSync(path) && !FileSystemEntity.isLinkSync(path);
     return rc;
@@ -265,7 +282,7 @@ class FileSync {
 
   /// Returns true if [path] is a symbolic link.
   /// [path]: the full name of the directory
-  static bool isLink(path) {
+  bool isLink(path) {
     var rc = Link(path).existsSync();
     return rc;
   }
@@ -274,7 +291,9 @@ class FileSync {
   /// [first]: first part
   /// [second]: second part
   /// [third]: third part
-  static String joinPaths(String first, String second, [String third]) {
+  /// deprecated: Use join() from package path
+  @deprecated
+  String joinPath(String first, String second, [String? third]) {
     final rc = StringBuffer(first);
     var last = first;
     if (second.isNotEmpty) {
@@ -310,8 +329,8 @@ class FileSync {
   /// [appendix] will be appended to the path
   /// [appendixes] a list of nodes to append to the path
   /// [nativeSep] the native separator. If null the global native path separator is used
-  static String nativePath(String path,
-      {String appendix, List<String> appendixes, String nativeSep}) {
+  String nativePath(String path,
+      {String? appendix, List<String>? appendixes, String? nativeSep}) {
     var rc = path;
     nativeSep ??= sep;
     if (appendix != null) {
@@ -329,7 +348,9 @@ class FileSync {
 
   /// Returns the filename of the [path] without path.
   /// Example: base('abc/def.txt') == 'def.txt'
-  static String nodeOf(String path) {
+  /// deprecated: Use basename() from package path
+  @deprecated
+  String nodeOf(String path) {
     final ix = path.lastIndexOf(sep);
     final rc = ix < 0 ? path : path.substring(ix + 1);
     return rc;
@@ -338,7 +359,9 @@ class FileSync {
   /// Returns the parent directory of the [path].
   /// Example: dirname('abc/def.txt') == 'abc/'
   /// [trailingSlash]: if false the trailing slash will not be part of the result
-  static String parentOf(String path, {bool trailingSlash = true}) {
+  /// deprecated: Use dirname() from package path
+  @deprecated
+  String parentOf(String path, {bool trailingSlash = true}) {
     final ix = path.lastIndexOf(sep);
     final rc = ix < 0 ? '' : path.substring(0, ix + (trailingSlash ? 1 : 0));
     return rc;
@@ -346,8 +369,8 @@ class FileSync {
 
   /// Changes the current directory to [path].
   /// Returns null on error or the previous current directory.
-  static String pushd(path) {
-    var rc = Directory.current.path;
+  String? pushd(path) {
+    String? rc = Directory.current.path;
     if (!chdir(path)) {
       rc = null;
     }
@@ -355,12 +378,12 @@ class FileSync {
   }
 
   /// Sets the internal logger.
-  static void setLogger(BaseLogger logger) => _logger = logger;
+  void setLogger(BaseLogger logger) => _logger = logger;
 
   /// Returns the [count] last lines of [filename].
   /// [reversed]: true: the lines in the result are in reversed order (last line
   /// is first)
-  static List<String> tail(String filename, int count, {reversed = false}) {
+  List<String> tail(String filename, int count, {reversed = false}) {
     var rc = <String>[];
     // Does not work:
     // File(filename)
@@ -396,11 +419,10 @@ class FileSync {
   /// [logger]: if given the creation of directory will be logged
   /// [subDirs]: if given: one or more nested directories, e.g. 'unittest/mytest'
   /// node is laying inside [subDirs]
-  static String tempDirectory(String node,
-      {BaseLogger logger, String subDirs, String extension}) {
+  String tempDirectory(String node, {String? subDirs}) {
     var rc = subDirs == null
-        ? joinPaths(tempDir, node)
-        : joinPaths(tempDir, subDirs, node);
+        ? package_path.join(tempDir, node)
+        : package_path.join(tempDir, subDirs, node);
     ensureDirectory(rc);
     return rc;
   }
@@ -411,9 +433,9 @@ class FileSync {
   /// [logger]: if given the creation of directory will be logged
   /// [subDirs]: if given: one or more nested directories, e.g. 'unittest/mytest'
   /// node is laying inside [subDirs]
-  static String tempFile(String node,
-      {BaseLogger logger, String subDirs, String extension}) {
-    final baseDir = subDirs == null ? tempDir : joinPaths(tempDir, subDirs);
+  String tempFile(String node, {String? subDirs, String? extension}) {
+    final baseDir =
+        subDirs == null ? tempDir : package_path.join(tempDir, subDirs);
     ensureDirectory(baseDir);
     var rc = baseDir.endsWith(sep) ? baseDir : baseDir + sep;
     if (!node.endsWith('*')) {
@@ -436,15 +458,18 @@ class FileSync {
   /// [dateAsString]: null or the modification date as string, e.g. '2019.2.3-4:33:55'
   /// [asTransaction]: true: the file will be written to another filename and renamed afterwords
   /// [mode]: null or the access rights of the file
-  static void toFile(String filename, String content,
-      {DateTime date,
-      String dateAsString,
+  void toFile(String filename, String? content,
+      {DateTime? date,
+      String? dateAsString,
       bool asTransaction = false,
       bool inline = false,
-      int mode,
+      int? mode,
       bool createDirectory = false}) {
     final target = asTransaction
-        ? FileSync.parentOf(filename) + '~' + nodeOf(filename) + '~'
+        ? package_path.dirname(filename) +
+            '~' +
+            package_path.basename(filename) +
+            '~'
         : filename;
     var file = File(target);
     content ??= '';
@@ -454,13 +479,13 @@ class FileSync {
         file.writeAsStringSync(content, flush: true);
       } on FileSystemException catch (exc) {
         if (!createDirectory) {
-          _logger?.error('$exc');
+          _logger.error('$exc');
         } else {
-          final parent = parentOf(filename);
+          final parent = package_path.dirname(filename);
           if (!Directory(parent).existsSync()) {
             ensureDirectory(parent);
           } else {
-            _logger?.error('$exc');
+            _logger.error('$exc');
           }
         }
       }
@@ -479,21 +504,26 @@ class FileSync {
         try {
           file2.deleteSync();
         } catch (e) {
-          _logger?.error('cannot remove $filename');
+          _logger.error('cannot remove $filename');
         }
       }
       try {
-        _logger?.log('renaming $target -> $filename', LEVEL_FINE);
+        _logger.log('renaming $target -> $filename', LEVEL_FINE);
         File(target).renameSync(filename);
       } catch (e) {
-        _logger?.error('cannot rename $target => $filename');
+        _logger.error('cannot rename $target => $filename');
       }
     }
     if (dateAsString != null) {
-      date = StringUtils.stringToDateTime(dateAsString);
+      date = string_utils.stringToDateTime(dateAsString);
     }
     if (date != null) {
       File(filename).setLastModifiedSync(date);
     }
+  }
+
+  /// Initializes the singleton.
+  static FileSync initialize(BaseLogger logger) {
+    return _instance = FileSync._internal(logger);
   }
 }

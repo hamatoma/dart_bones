@@ -124,7 +124,7 @@ void main() async {
       expect(
           await db.insertOne(
               "insert into users (user_id, user_name, group_id) values (6, 'rosa', 2), (7, 'tom', 2);"),
-          isNull);
+          0);
     });
     test('insertOne-fail-zero', () async {
       try {
@@ -139,7 +139,7 @@ void main() async {
       expect(
           await db.insertOne(
               "insert into users (user_id, user_name, group_id) values (1, 'daniel', 2);"),
-          isNull);
+          0);
     });
     test('insertRaw', () async {
       final results = await db.insertRaw(
@@ -394,12 +394,15 @@ void main() async {
           sql: "select * from users where :name='a' and :id < 9 or :name='b",
           mapParams: map,
           logger: logger);
-      expect(sqlAndList.sql,
-          equals("select * from users where ?='a' and ? < 9 or ?='b"));
-      expect(sqlAndList.params.length, equals(3));
-      expect(sqlAndList.params[0], equals('x'));
-      expect(sqlAndList.params[1], equals(22));
-      expect(sqlAndList.params[2], equals('x'));
+      expect(sqlAndList, isNotNull);
+      if (sqlAndList != null) {
+        expect(sqlAndList.sql,
+            equals("select * from users where ?='a' and ? < 9 or ?='b"));
+        expect(sqlAndList.params.length, equals(3));
+        expect(sqlAndList.params[0], equals('x'));
+        expect(sqlAndList.params[1], equals(22));
+        expect(sqlAndList.params[2], equals('x'));
+      }
     });
     test('convertNamedParams-error', () {
       final map = <String, dynamic>{':name': 'x', ':idChanged': 22};
@@ -474,7 +477,7 @@ void main() async {
       expect(column.name, equals('user_id'));
       expect(column.type, MysqlType.int);
       expect(column.typeName, 'int(10) unsigned');
-      expect(column.size, isNull);
+      expect(column.size, 0);
       expect(column.options, 'primary notnull auto_increment');
       expect(column.defaultValue, 'null');
       expect(columns['user_name'].size, 200);
@@ -518,24 +521,24 @@ void main() async {
   });
 }
 
-Future<int> countOfCloudName(MySqlDb db, String name) async {
+Future<int?> countOfCloudName(MySqlDb db, String name) async {
   final count = await db.readOneInt(
       'select count(*) from clouds where cloud_name=?',
       params: [name]);
   return count;
 }
 
-Future<int> countOfUserId(MySqlDb db, int id) async {
+Future<int?> countOfUserId(MySqlDb db, int id) async {
   final count = await db.readOneInt(
       'select count(user_id) from users where user_id=?',
       params: [id]);
   return count;
 }
 
-List<dynamic> lastRows;
+List<dynamic> lastRows = [];
 
-Future<bool> doItWithOneRow(List<dynamic> row) {
-  final Future<bool> rc = null;
+Future<bool> doItWithOneRow(List<dynamic> row) async {
+  final rc = true;
   lastRows.add(row);
   return rc;
 }
@@ -555,7 +558,7 @@ class TestClass {
   }
 
   Future<bool> _doItWithOneRow(List<dynamic> row) async {
-    Future<bool> rc;
+    var rc = Future<bool>(() => false);
     _logger.log('found: ${row[0]}');
     _list.add(row);
     return rc;

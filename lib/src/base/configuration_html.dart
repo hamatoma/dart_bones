@@ -4,9 +4,7 @@ import '../../dart_bones.dart';
 
 /// Implements static functions for files and directories in the sync variant.
 class Configuration extends BaseConfiguration {
-  String _filename;
-
-  String get filename => _filename;
+  String? _filename;
 
   /// Constructor: reads the configuration file.
   /// [directory]: the configuration file will be searched here
@@ -19,4 +17,6 @@ class Configuration extends BaseConfiguration {
       : super({}, logger) {
     logger.log('configuration_none::Configuration.fromFile() used');
   }
+
+  String? get filename => _filename;
 }

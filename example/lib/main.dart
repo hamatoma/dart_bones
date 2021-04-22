@@ -22,21 +22,28 @@ void showConfiguration() {
 
 void showFileSync() {
   // FileSync:
-  final fn = FileSync.tempFile('test.data', subDirs: 'dir1/dir2');
-  FileSync.toFile(fn, '1, 2');
-  final content = FileSync.fileAsString(fn);
+  final fileSync = FileSync();
+  final fn = fileSync.tempFile('test.data', subDirs: 'dir1/dir2');
+  fileSync.toFile(fn, '1, 2');
+  final content = fileSync.fileAsString(fn);
   assert(content == '1, 2');
-  final content2 = FileSync.fileAsList(fn);
+  final content2 = fileSync.fileAsList(fn);
   assert(content2.length == 1 && content2[0] == '1, 2');
   // Remove and log errors:
-  FileSync.ensureDoesNotExist(fn);
+  fileSync.ensureDoesNotExist(fn);
 
-  print(FileSync.humanSize(123437829)); // "123.438MB"
+  print(fileSync.humanSize(123437829)); // "123.438MB"
 }
 
 Future<MySqlDb> showMysqlDb() async {
   final logger = MemoryLogger(LEVEL_DETAIL);
-  final db = MySqlDb('testdb', 'test', 'TopSecret', 'localhost', 3306, logger);
+  final db = MySqlDb(
+      dbName: 'testdb',
+      dbUser: 'test',
+      dbCode: 'TopSecret',
+      dbHost: 'localhost',
+      dbPort: 3306,
+      logger: logger);
   var success;
   await db.connect();
   success = success && await db.execute('drop table if exists users;');
@@ -62,15 +69,14 @@ void showValidationAndStringUtils() {
   final value = '-0x7f3a';
   if (Validation.isNat(value) && Validation.isEmail('a@example.com') ||
       Validation.isPhoneNumber('+49-89-1234')) {
-    print(StringUtils.asInt(value));
+    print(asInt(value));
   }
-  final answer = StringUtils.stringToEnum<Answer>('yes', Answer.values);
-  print(StringUtils.enumToString(answer)); // "yes"
-  print(StringUtils.limitString('A very long string ', 7,
-      ellipsis: '..')); // "A very.."
+  final answer = stringToEnum<Answer>('yes', Answer.values);
+  print(enumToString(answer)); // "yes"
+  print(limitString('A very long string ', 7, ellipsis: '..')); // "A very.."
 
   final text1 = 'Name: %name Year: %year';
-  final text2 = StringUtils.replacePlaceholders(
+  final text2 = replacePlaceholders(
       text1, {'name': 'joe', 'year': '2020'}, RegExp(r'%(\w+)'));
   print(text2); // "Name: joe Year: 2020"
 }

@@ -1,7 +1,6 @@
 import 'dart:io';
-
+import 'package:path/path.dart' as package_path;
 import 'package:dart_bones/dart_bones.dart';
-import 'package:meta/meta.dart';
 
 import 'base_logger.dart';
 import 'process_sync.dart';
@@ -10,25 +9,27 @@ import 'process_sync.dart';
 class OsService {
   final BaseLogger logger;
   final UserInfo userInfo = UserInfo();
+  final _fileSync = FileSync();
+  final _processSync = ProcessSync();
   OsService(this.logger);
 
   /// Tests whether a [group] exists.
   bool groupExists(String group) {
-    final lines = FileSync.fileAsList('/etc/group');
+    final lines = _fileSync.fileAsList('/etc/group');
     final pattern = '$group:';
-    final rc = lines.firstWhere((element) => element.startsWith(pattern),
-            orElse: () => null) !=
-        null;
+    final rc = lines
+        .firstWhere((element) => element.startsWith(pattern), orElse: () => '')
+        .isNotEmpty;
     return rc;
   }
 
   /// Returns the group id of an [group] or null.
-  int groupId(String group) {
-    final lines = FileSync.fileAsList('/etc/group');
+  int? groupId(String group) {
+    final lines = _fileSync.fileAsList('/etc/group');
     final pattern = '$group:';
     final line = lines.firstWhere((element) => element.startsWith(pattern),
-        orElse: () => null);
-    final rc = line == null ? null : int.parse(line.split(':')[2]);
+        orElse: () => '');
+    final rc = line.isEmpty ? null : int.parse(line.split(':')[2]);
     return rc;
   }
 
@@ -38,28 +39,26 @@ class OsService {
   /// If [configurationContent] is null [configurationFile] is not written.
   /// [targetExecutable] is the directory to store the executable.
   void install(String appName,
-      {String configurationFile,
-      String configurationContent,
+      {String? configurationFile,
+      String? configurationContent,
       String targetExecutable = '/usr/local/bin'}) {
     if (!userInfo.isRoot) {
       logger.error('Be root');
     } else {
       configurationFile ??= '/etc/$appName/$appName.yaml';
       if (configurationContent != null) {
-        FileSync.ensureDirectory(FileSync.parentOf(configurationFile));
+        _fileSync.ensureDirectory(package_path.basename(configurationFile));
         logger.log('= writing configuration to $configurationFile');
-        FileSync.toFile(configurationFile, configurationContent);
+        _fileSync.toFile(configurationFile, configurationContent);
       }
       final executable = Platform.script.toFilePath();
-      if (executable != null) {
-        final file = File(executable);
-        if (!file.existsSync()) {
-          logger.error('cannot access executable $executable');
-        } else {
-          logger.log('= $executable -> $targetExecutable');
-          file.copy(FileSync.joinPaths(
-              targetExecutable, FileSync.nodeOf(executable)));
-        }
+      final file = File(executable);
+      if (!file.existsSync()) {
+        logger.error('cannot access executable $executable');
+      } else {
+        logger.log('= $executable -> $targetExecutable');
+        file.copy(package_path.join(
+            targetExecutable, package_path.basename(executable)));
       }
     }
   }
@@ -74,11 +73,11 @@ class OsService {
   /// [startAtOnce]: true: the service is started at once, false: the service
   /// must be started manually.
   void installService(String serviceName,
-      {@required String starter,
-      String user,
-      String group,
-      String description,
-      String workingDirectory,
+      {required String starter,
+      String? user,
+      String? group,
+      String? description,
+      String? workingDirectory,
       bool startAtOnce = true}) {
     final userInfo = UserInfo();
     if (!userInfo.isRoot) {
@@ -93,7 +92,7 @@ class OsService {
     } else {
       final systemDPath = '/etc/systemd/system';
       final systemDFile =
-          FileSync.joinPaths(systemDPath, '$serviceName.service');
+          package_path.join(systemDPath, '$serviceName.service');
       user ??= serviceName;
       group ??= user;
       description ??= 'A daemon to service $serviceName';
@@ -118,7 +117,7 @@ RestartSec=3
 WantedBy=multi-user.target
 ''';
       logger.log('= installing $systemDFile');
-      FileSync.toFile(systemDFile, script);
+      _fileSync.toFile(systemDFile, script);
       if (!userExists(user)) {
         final args = <String>['--no-create-home'];
         if (user != group) {
@@ -126,53 +125,53 @@ WantedBy=multi-user.target
         }
         args.add(user);
         logger.log('= creating user $user ' +
-            ProcessSync.executeToString('/usr/sbin/useradd', args).trim());
+            _processSync.executeToString('/usr/sbin/useradd', args).trim());
       }
       if (!groupExists(group)) {
         logger.log('= creating group $group ' +
-            ProcessSync.executeToString('/usr/sbin/groupadd', [group]).trim());
+            _processSync.executeToString('/usr/sbin/groupadd', [group]).trim());
       }
-      logger.log(ProcessSync.executeToString(
-          '/bin/systemctl', ['enable', serviceName]));
+      logger.log(_processSync
+          .executeToString('/bin/systemctl', ['enable', serviceName]));
       if (!startAtOnce) {
         logger
             .log('= Please check the configuration and than start the service:'
                 'systemctl start $serviceName');
       } else {
-        ProcessSync.executeToString('/bin/systemctl', ['start', serviceName]);
+        _processSync.executeToString('/bin/systemctl', ['start', serviceName]);
         logger.log('= Status $serviceName\n' +
-            ProcessSync.executeToString(
-                '/bin/systemctl', ['status', serviceName]));
+            _processSync
+                .executeToString('/bin/systemctl', ['status', serviceName]));
       }
     }
   }
 
-  void uninstallService(String serviceName, {String user, String group}) {
+  void uninstallService(String serviceName, {String? user, String? group}) {
     final userInfo = UserInfo();
     if (!userInfo.isRoot) {
       logger.error('Be root');
     } else {
       logger.log('= Disabling and stopping the service $serviceName');
-      logger.log(ProcessSync.executeToString(
-          '/bin/systemctl', ['disable', serviceName]));
-      logger.log(
-          ProcessSync.executeToString('/bin/systemctl', ['stop', serviceName]));
-      logger.log(ProcessSync.executeToString(
-          '/bin/systemctl', ['status', serviceName]));
+      logger.log(_processSync
+          .executeToString('/bin/systemctl', ['disable', serviceName]));
+      logger.log(_processSync
+          .executeToString('/bin/systemctl', ['stop', serviceName]));
+      logger.log(_processSync
+          .executeToString('/bin/systemctl', ['status', serviceName]));
       final systemDFile =
-          FileSync.joinPaths('/etc/systemd/system', '$serviceName.service');
+          package_path.join('/etc/systemd/system', '$serviceName.service');
       final file = File(systemDFile);
       if (file.existsSync()) {
         logger.log('= removing $systemDFile');
         file.deleteSync();
       }
-      if (group == serviceName && groupExists(group)) {
+      if (group == serviceName && group != null && groupExists(group)) {
         logger.log('= removing group $group ' +
-            ProcessSync.executeToString('/usr/sbin/groupdel', [group]));
+            _processSync.executeToString('/usr/sbin/groupdel', [group]));
       }
-      if (user == serviceName && userExists(user)) {
+      if (user == serviceName && user != null && userExists(user)) {
         logger.log('= removing user $user ' +
-            ProcessSync.executeToString('/usr/sbin/userdel', [user]));
+            _processSync.executeToString('/usr/sbin/userdel', [user]));
       }
     }
   }
@@ -181,42 +180,44 @@ WantedBy=multi-user.target
   bool userExists(String user) {
     var rc;
     if (Platform.isLinux) {
-      final lines = FileSync.fileAsList('/etc/passwd');
+      final lines = _fileSync.fileAsList('/etc/passwd');
       final pattern = '$user:';
-      rc = lines.firstWhere((element) => element.startsWith(pattern),
-              orElse: () => null) !=
-          null;
+      rc = lines
+          .firstWhere((element) => element.startsWith(pattern),
+              orElse: () => '')
+          .isNotEmpty;
     }
     return rc;
   }
 
   /// Returns the user id of an [user] or null.
-  int userId(String user) {
-    final lines = FileSync.fileAsList('/etc/passwd');
+  int? userId(String user) {
+    final lines = _fileSync.fileAsList('/etc/passwd');
     final pattern = '$user:';
     final line = lines.firstWhere((element) => element.startsWith(pattern),
-        orElse: () => null);
-    final rc = line == null ? null : int.parse(line.split(':')[2]);
+        orElse: () => '');
+    final rc = line.isEmpty ? null : int.parse(line.split(':')[2]);
     return rc;
   }
 }
 
 /// Holds the information about the current user.
 class UserInfo {
-  String currentUserName = fromEnv('USER');
+  final _processSync = ProcessSync();
+  String? currentUserName = fromEnv('USER');
   int currentUserId = -1;
-  int currentGroupId;
-  String currentGroupName;
-  String home = fromEnv('HOME');
+  int? currentGroupId;
+  String? currentGroupName;
+  String? home = fromEnv('HOME');
   UserInfo() {
     if (Platform.isLinux) {
-      final info = ProcessSync.executeToString('/usr/bin/id', []);
+      final info = _processSync.executeToString('/usr/bin/id', []);
       final matcher =
           RegExp(r'uid=(\d+)\((\w+)\) gid=(\d+)\((\w+)').firstMatch(info);
       if (matcher != null) {
-        currentUserId = int.parse(matcher.group(1));
-        currentUserName = matcher.group(2);
-        currentGroupId = int.parse(matcher.group(3));
+        currentUserId = int.parse(matcher.group(1) ?? '');
+        currentUserName = matcher.group(2) ?? '';
+        currentGroupId = int.parse(matcher.group(3) ?? '');
         currentGroupName = matcher.group(4);
       }
     }
@@ -225,7 +226,7 @@ class UserInfo {
       currentUserId < 0 ? currentUserName == 'root' : currentUserId == 0;
 
   /// Gets the value of a variable named [name] from the environment or null.
-  static String fromEnv(String name) {
+  static String? fromEnv(String name) {
     var rc = Platform.environment.containsKey(name)
         ? Platform.environment[name]
         : null;

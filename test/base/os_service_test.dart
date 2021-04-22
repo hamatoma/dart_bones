@@ -32,7 +32,7 @@ void main() {
       expect(info.currentGroupName, isNotNull);
       expect(info.currentGroupId, greaterThan(200));
       expect(info.home, isNotNull);
-      expect(Directory(info.home).existsSync(), isNotNull);
+      expect(Directory(info.home ?? '').existsSync(), isNotNull);
     });
   });
 }

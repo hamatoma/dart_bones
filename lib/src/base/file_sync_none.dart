@@ -8,6 +8,8 @@ class FileSync {
   /// Returns the extension of the [path].
   /// The extension is the part behind the last '.'.
   /// If the only '.' is at the top, the result is '' otherwise the the last part with '.'.
+  /// deprecated: Use extension() from package path
+  @deprecated
   static String extensionOf(String path) {
     var rc = '';
     final ix = path.lastIndexOf('.');
@@ -21,6 +23,8 @@ class FileSync {
   /// Returns the extension of the [path].
   /// The extension is the part behind the last '.'.
   /// If the only '.' is at the top, the result is '' otherwise the the last part with '.'.
+  /// deprecated: Use basename() from package path
+  @deprecated
   static String filenameOf(String path) {
     var rc = '';
     final ix = path.lastIndexOf('.');
@@ -71,7 +75,9 @@ class FileSync {
   /// [first]: first part
   /// [second]: second part
   /// [third]: third part
-  static String joinPaths(String first, String second, [String third]) {
+  /// deprecated: Use join() from package path
+  @deprecated
+  static String joinPaths(String first, String second, [String? third]) {
     final rc = StringBuffer(first);
     var last = first;
     if (second.isNotEmpty) {
@@ -108,7 +114,7 @@ class FileSync {
   /// [appendixes] a list of nodes to append to the path
   /// [nativeSep] the native separator. If null the global native path separator is used
   static String nativePath(String path,
-      {String appendix, List<String> appendixes, String nativeSep}) {
+      {String? appendix, List<String>? appendixes, String? nativeSep}) {
     var rc = path;
     nativeSep ??= sep;
     if (appendix != null) {
@@ -126,6 +132,8 @@ class FileSync {
 
   /// Returns the filename of the [path] without path.
   /// Example: base('abc/def.txt') == 'def.txt'
+  /// deprecated: Use basename() from package path
+  @deprecated
   static String nodeOf(String path) {
     final ix = path.lastIndexOf(sep);
     final rc = ix < 0 ? path : path.substring(ix + 1);
@@ -134,6 +142,8 @@ class FileSync {
 
   /// Returns the parent directory of the [path].
   /// Example: dirname('abc/def.txt') == 'abc/'
+  /// deprecated: Use dirname() from package path
+  @deprecated
   static String parentOf(String path) {
     final ix = path.lastIndexOf(sep);
     final rc = ix < 0 ? '' : path.substring(0, ix + 1);
