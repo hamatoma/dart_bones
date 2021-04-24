@@ -1,5 +1,7 @@
 import 'package:test/test.dart';
-import 'package:dart_bones/dart_bones.dart';
+import 'package:dart_bones/src/base/base_logger.dart';
+import 'package:dart_bones/src/base/memory_logger.dart';
+import 'package:dart_bones/src/base/process_sync_io.dart';
 void main() {
   var logger = MemoryLogger(LEVEL_FINE);
   final processSync = ProcessSync.initialize(logger);

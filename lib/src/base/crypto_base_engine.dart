@@ -1,15 +1,15 @@
-import 'dart:io';
+//import 'dart:io';
 
 import 'package:dart_bones/dart_bones.dart';
 
 import 'kiss_random.dart';
 
-class CryptoEngine {
+class CryptoBaseEngine {
   KissRandom trueRandom = KissRandom(globalLogger);
   BaseRandom random = KissRandom(globalLogger);
   final BaseLogger logger;
   List<int> firstState = <int>[];
-  CryptoEngine(
+  CryptoBaseEngine(
       {BaseRandom? random,
       required this.logger,
       String? passPhrase,
@@ -26,10 +26,7 @@ class CryptoEngine {
     }
     firstState = this.random.saveState();
     if (!usePseudoRandomSalt) {
-      trueRandom.setSeed(DateTime.now().toString() +
-          Platform.localeName +
-          Platform.localHostname +
-          Platform.version);
+      trueRandom.setSeed(DateTime.now().toString());
       trueRandom.setResetState();
     }
   }

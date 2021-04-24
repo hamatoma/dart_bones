@@ -1,11 +1,10 @@
 name: dart_bones_example
 description: Example for usage of dart_bones.
-version: 1.0.0
+version: 1.0.1
 homepage: https://github.com/hamatoma/dart_bones
 
 environment:
   sdk: ">=2.7.0 <3.0.0"
 
 dependencies:
-  dart_bones:
-    path: ..
+  dart_bones: "^1.0.1"

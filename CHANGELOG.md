@@ -1,6 +1,23 @@
-## [1.0.0] - 2021.04.23
+## [1.1.0] - 2021.04.24 isolated instances of ProcessSync...
 
-* nullsafty
+* ProcessSync and FileSync:
+  * Now it is possible to request a non singleton instance of ProcessSync
+   and FileSync: meaningful in different isolates
+* OsService:
+  * singleton instance (and isolated) like in FileSync
+
+* CryptoEngine: separation from dart:io
+  * CryptoBaseEngine contains the main part but it does not contain
+    dart:io references
+  * CrypytoEngine contains dart:io references: the "true random" initialization
+    uses Platform components
+
+* dart_bones.dart:
+  * conditional exports for process_sync, os_service, crypto_engine, mysqldb
+
+## [1.0.0] - 2021.04.23 null safety
+
+* null safety
 * Breaking changes:
   * string_utils:
   * class StringUtils removed: all static functions are now "plain" functions

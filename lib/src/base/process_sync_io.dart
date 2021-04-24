@@ -10,9 +10,16 @@ class ProcessSync {
   BaseLogger _logger = globalLogger;
   final _fileSync = FileSync();
 
-  /// Returns the singleton instance.
-  factory ProcessSync() {
-    return _instance ??= ProcessSync._internal(globalLogger);
+  /// The public constructor.
+  /// If [logger] is null an isolated instance is returned. Otherwise a singleton.
+  /// Note: normally the singleton instance should be used.
+  /// Only in special cases like different threads ("isolates") isolated
+  /// instances will be meaningful.
+  factory ProcessSync([BaseLogger? logger]) {
+    final rc = logger != null
+        ? ProcessSync._internal(logger)
+        : _instance ??= ProcessSync._internal(globalLogger);
+    return rc;
   }
 
   /// The private internal constructor.

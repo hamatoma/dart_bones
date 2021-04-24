@@ -1,7 +1,7 @@
 import 'dart:io';
 
-import 'package:dart_bones/dart_bones.dart';
-import 'package:dart_bones/src/base/os_service.dart';
+import 'package:dart_bones/src/base/base_logger.dart';
+import 'package:dart_bones/src/base/os_service_io.dart';
 import 'package:test/test.dart';
 
 void main() {

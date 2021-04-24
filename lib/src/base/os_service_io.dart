@@ -1,17 +1,34 @@
 import 'dart:io';
+
 import 'package:path/path.dart' as package_path;
-import 'package:dart_bones/dart_bones.dart';
 
 import 'base_logger.dart';
-import 'process_sync.dart';
+import 'bones_globals.dart';
+import 'file_sync_io.dart';
+import 'process_sync_io.dart';
 
 /// Holds the information about the current user.
 class OsService {
+  static OsService? _instance;
   final BaseLogger logger;
   final UserInfo userInfo = UserInfo();
   final _fileSync = FileSync();
   final _processSync = ProcessSync();
-  OsService(this.logger);
+
+  /// The public constructor.
+  /// If [logger] is null an isolated instance is returned. Otherwise a singleton.
+  /// Note: normally the singleton instance should be used.
+  /// Only in special cases like different threads ("isolates") isolated
+  /// instances will be meaningful.
+  factory OsService([BaseLogger? logger]) {
+    final rc = logger != null
+        ? OsService._internal(logger)
+        : _instance ??= OsService._internal(globalLogger);
+    return rc;
+  }
+
+  /// Private constructor.
+  OsService._internal(this.logger);
 
   /// Tests whether a [group] exists.
   bool groupExists(String group) {

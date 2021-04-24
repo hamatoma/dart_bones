@@ -10,13 +10,22 @@ import 'string_utils.dart' as string_utils;
 class FileSync {
   static final sep = Platform.pathSeparator;
   static final currentDirSep = '.' + Platform.pathSeparator;
+
+  /// the singleton instance
   static FileSync? _instance;
   static final tempDir = Platform.isLinux ? '/tmp' : 'c:\\temp';
   BaseLogger _logger;
 
   /// The public constructor.
-  factory FileSync() {
-    return _instance ??= FileSync._internal(globalLogger);
+  /// If [logger] is null an isolated instance is returned. Otherwise a singleton.
+  /// Note: normally the singleton instance should be used.
+  /// Only in special cases like different threads ("isolates") isolated
+  /// instances will be meaningful.
+  factory FileSync([BaseLogger? logger]) {
+    final rc = logger != null
+        ? FileSync._internal(logger)
+        : _instance ??= FileSync._internal(globalLogger);
+    return rc;
   }
 
   /// Internal constructor
