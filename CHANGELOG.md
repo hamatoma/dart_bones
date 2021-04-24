@@ -1,3 +1,11 @@
+## [1.1.1] - 2021.04.24 support multiple platforms
+
+* refactored: dart_bones.dart
+* stub methods in file_sync_none, process_sync_none, mysql_db_none
+  and os_service-none
+* relative imports in some unit tests
+* logger_html: new implementation (asDiv())
+
 ## [1.1.0] - 2021.04.24 isolated instances of ProcessSync...
 
 * ProcessSync and FileSync:

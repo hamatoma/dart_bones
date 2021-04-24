@@ -270,10 +270,6 @@ class FileSync {
     return rc;
   }
 
-  void initializes(BaseLogger logger) {
-    _instance = FileSync._internal(logger);
-  }
-
   /// Returns true if [path] is a directory.
   /// [path]: the full name of the directory
   bool isDir(path) {

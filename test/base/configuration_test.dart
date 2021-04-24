@@ -1,6 +1,9 @@
 import 'package:path/path.dart' as package_path;
-import 'package:dart_bones/dart_bones.dart';
-import 'package:dart_bones/src/base/configuration_io.dart' as config_io;
+import 'package:dart_bones/src/base/base_logger.dart';
+import 'package:dart_bones/src/base/file_sync_io.dart';
+import 'package:dart_bones/src/base/memory_logger.dart';
+import 'package:dart_bones/src/base/base_configuration.dart';
+import 'package:dart_bones/src/base/configuration_io.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -22,7 +25,7 @@ void main() {
       logger.log('expecting error: does not exist:');
       final config2 = Configuration(base, 'not_exists', logger);
       expect(config2.filename, isNull);
-      final config3 = config_io.Configuration.constructed(logger, map: { 'a' : 33});
+      final config3 = Configuration.constructed(logger, map: { 'a' : 33});
       expect(config3.asInt('a'), equals(33));
     });
   });

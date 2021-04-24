@@ -1,6 +1,6 @@
 name: dart_bones
 description: Helper classes for Dart programming. StringUtils for string handling, file_sync for file helpers...
-version: 1.1.0
+version: 1.1.1
 homepage: https://github.com/hamatoma/dart_bones
 
 environment:

@@ -2,7 +2,10 @@ import 'dart:io';
 
 import 'package:path/path.dart' as package_path;
 import 'package:test/test.dart';
-import 'package:dart_bones/dart_bones.dart';
+import 'package:dart_bones/src/base/memory_logger.dart';
+import 'package:dart_bones/src/base/base_logger.dart';
+import 'package:dart_bones/src/base/file_sync_io.dart';
+import 'package:dart_bones/src/base/string_utils.dart';
 
 import 'asserts.dart';
 

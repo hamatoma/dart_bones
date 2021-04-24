@@ -29,12 +29,13 @@ class DbException implements Exception {
 
 class MySqlDb {
   bool throwOnError = false;
+  int timeout = 0;
   String? dbName;
   String? dbUser;
   String? dbCode;
   String? dbHost;
   int? dbPort;
-  bool? hasConnection;
+  bool hasConnection = false;
 
   /// Constructor
   MySqlDb(
@@ -55,12 +56,13 @@ class MySqlDb {
       {String section = 'db'}) {
     throw UnsupportedError('not implemented: MysqlDb.fromConfiguration()');
   }
+
   void close() {
     throw UnsupportedError('not implemented: MySqlDb.close()');
   }
 
   Future<bool> connect({bool? throwOnError}) async {
-    throw UnsupportedError('not implemented: MySqlDb.connect()');
+    throw UnsupportedError('not implemented: MySqlDb.updateOne()');
   }
 
   Future<bool> execute(String sql,
@@ -68,14 +70,53 @@ class MySqlDb {
     throw UnsupportedError('not implemented: MySqlDb.execute()');
   }
 
+  Future<bool> hasTable(String name, {bool forceUpdate = false}) async {
+    throw UnsupportedError('not implemented: MysqlDb.hasTable()');
+  }
+
+  Future<int> insertOne(String sql,
+      {List<dynamic>? params, bool? throwOnError}) async {
+    throw UnsupportedError('not implemented: MySqlDb.insertOne()');
+  }
+
   Future<dynamic> insertRaw(String sql,
       {List<dynamic>? params, bool? throwOnError}) async {
     throw UnsupportedError('not implemented: MySqlDb.execute()');
   }
 
+  Future<dynamic> readAll(String sql,
+      {List<dynamic>? params, bool? throwOnError}) async {
+    throw UnsupportedError('not implemented: MySqlDb.readAll()');
+  }
+
+  Future<List<dynamic>?> readAllAsLists(String sql,
+      {List<dynamic>? params, bool? throwOnError}) async {
+    throw UnsupportedError('not implemented: MySqlDb.readAllAsLists()');
+  }
+
+  Future<bool> readAndExecute(
+      String sql, List<dynamic> params, dynamic onSingleRow) async {
+    throw UnsupportedError('not implemented: MySqlDb.readAndExecute()');
+  }
+
+  Future<Map<String, dynamic>?> readOneAsMap(String sql,
+      {List<dynamic>? params, bool? throwOnError}) async {
+    throw UnsupportedError('not implemented: MySqlDb.readOneAsMap');
+  }
+
   Future<int?> readOneInt(String sql,
       {List<dynamic>? params, nullAllowed = false, bool? throwOnError}) async {
     throw UnsupportedError('not implemented: MySqlDb.readOneInt()');
+  }
+
+  Future<String?> readOneString(String sql,
+      {List<dynamic>? params, nullAllowed = false, bool? throwOnError}) async {
+    throw UnsupportedError('not implemented: MySqlDb.readOneString()');
+  }
+
+  Future<bool> updateOne(String sql,
+      {List<dynamic>? params, bool? throwOnError}) async {
+    throw UnsupportedError('not implemented: MySqlDb.connect()');
   }
 
   static dynamic convertNamedParams(
@@ -84,11 +125,6 @@ class MySqlDb {
       required BaseLogger logger,
       bool ignoreError = false}) {
     throw UnsupportedError('not implemented: MySqlDb.convertNamedParams()');
-  }
-
-  Future<bool> readAndExecute(
-      String sql, List<dynamic> params, dynamic onSingleRow) async {
-    throw UnsupportedError('not implemented: MySqlDb.readAndExecute()');
   }
 }
 

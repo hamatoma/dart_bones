@@ -1,6 +1,8 @@
-import 'package:dart_bones/dart_bones.dart';
 import 'package:test/test.dart';
-import 'package:dart_bones/src/base/logger_io.dart' as logger_io;
+import 'package:dart_bones/src/base/memory_logger.dart';
+import 'package:dart_bones/src/base/base_logger.dart';
+import 'package:dart_bones/src/base/logger_io.dart';
+import 'package:dart_bones/src/base/file_sync_io.dart';
 
 void main() {
   final stdLogger = MemoryLogger(LEVEL_FINE);
@@ -9,7 +11,7 @@ void main() {
     test('Logger', () {
       final fn = fileSync.tempFile('test.log', subDirs: 'unittest');
       fileSync.ensureDoesNotExist(fn);
-      final logger = logger_io.Logger(fn);
+      final logger = Logger(fn);
       logger.log('first1');
       logger.error('error1');
       final current = fileSync.fileAsString(fn);

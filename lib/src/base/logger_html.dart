@@ -1,30 +1,29 @@
-import 'dart:io';
+import 'dart:convert' as convert;
 
-import '../../dart_bones.dart';
+import 'memory_logger.dart';
 
-class Logger extends BaseLogger {
-  String? _filename;
-  File? _file;
+class HtmlLogger extends MemoryLogger {
+  HtmlLogger(String filename, [int logLevel = 1]) : super(logLevel);
 
-  Logger(String filename, [int logLevel = 1]) : super(logLevel) {
-    _filename = filename;
-    _file = File(filename);
-  }
-
-  /// Getter of [_filename].
-  String? filename() => _filename;
-
-  @override
-  bool log(String message, [int level = 1]) {
-    super.log(message, level);
-    logToFile(message);
-    return true;
-  }
-
-  /// Writes a string into the logfile.
-  /// [message] the line to write
-  void logToFile(String message) {
-    _file?.writeAsStringSync(message,
-        flush: true, mode: FileMode.writeOnlyAppend);
+  String asDiv() {
+    var buffer = StringBuffer();
+    if (messages.isNotEmpty) {
+      buffer.write('<div class="logger">');
+      messages.forEach((element) {
+        buffer.write(convert.htmlEscape.convert(element));
+        buffer.write('<br/>');
+      });
+      buffer.write('</div>');
+    }
+    if (errors.isNotEmpty) {
+      buffer.write('<div class="error">');
+      errors.forEach((element) {
+        buffer.write('+++ ');
+        buffer.write(convert.htmlEscape.convert(element));
+        buffer.write('<br/>');
+      });
+      buffer.write('</div>');
+    }
+    return buffer.toString();
   }
 }

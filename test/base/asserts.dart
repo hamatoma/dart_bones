@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:dart_bones/dart_bones.dart';
+import 'package:dart_bones/src/base/file_sync_io.dart';
 import 'package:test/test.dart';
 
 bool fileNotExists(path) =>

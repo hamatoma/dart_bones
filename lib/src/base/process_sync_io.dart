@@ -1,7 +1,6 @@
 import 'dart:io';
 
-import 'package:dart_bones/dart_bones.dart';
-
+import 'bones_globals.dart';
 import 'base_logger.dart';
 import 'file_sync_io.dart';
 
