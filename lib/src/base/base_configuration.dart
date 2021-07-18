@@ -2,7 +2,9 @@ import 'package:meta/meta.dart';
 
 import 'base_logger.dart';
 
-/// Implements static functions for files and directories in the sync variant.
+/// Implements read access to a YAML based configuration content.
+/// Only a two levels structure is allowed: simple types in the first level
+/// or simple types in a named map. The name of such a map is called "section".
 class BaseConfiguration {
   @protected
   Map yamlMap;
@@ -12,6 +14,9 @@ class BaseConfiguration {
   /// Constructor: reads the configuration file.
   /// [yamlMap] contains the data.
   BaseConfiguration(this.yamlMap, this.logger);
+
+  bool get isEmpty => yamlMap.isEmpty;
+  bool get isNotEmpty => yamlMap.isNotEmpty;
 
   /// Returns a bool value given by [section] and [key].
   /// [key]: the key of the (key value) pair

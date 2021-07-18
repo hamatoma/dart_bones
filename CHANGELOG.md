@@ -1,3 +1,9 @@
+## [1.1.2] - 2021.07.17 MySqlDb, BaseConfiguration
+
+* MySqlDb: exports now updateRaw()
+* BaseConfiguration: new isEmpty and isNotEmpty
+* FileSync: ensureDirectory(): catch exception, result type now bool
+
 ## [1.1.1] - 2021.04.24 support multiple platforms
 
 * refactored: dart_bones.dart

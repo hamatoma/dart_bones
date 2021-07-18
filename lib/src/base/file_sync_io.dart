@@ -118,8 +118,9 @@ class FileSync {
   /// [owner] the UID of the owner
   /// [group] the GID of the owner group
   /// [clear] true: the directory will be cleared (all entries inside will be deleted)
-  void ensureDirectory(String path,
+  bool ensureDirectory(String path,
       {int? mode, int? owner, int? group, bool clear = false}) {
+    var rc = true;
     // we do not handle '/':
     if (path != '/') {
       if (path.endsWith(sep)) {
@@ -128,7 +129,12 @@ class FileSync {
       final dir = Directory(path);
       if (!dir.existsSync()) {
         _logger.log('creating $path');
-        dir.createSync(recursive: true);
+        try {
+          dir.createSync(recursive: true);
+        } on FileSystemException catch (exc) {
+          _logger.error('cannot create $path: $exc');
+          rc = false;
+        }
       } else if (clear) {
         clearDirectory(path);
       }
@@ -140,6 +146,7 @@ class FileSync {
         chmod(path, mode);
       }
     }
+    return rc;
   }
 
   /// Removes a file/directory if it exists.

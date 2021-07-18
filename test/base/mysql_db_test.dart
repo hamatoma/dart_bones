@@ -74,6 +74,7 @@ void main() async {
   group('Basics', () {
     test('connect-fail', () async {
       logger.clear();
+      logger.log('expecting: cannot connect(2)...');
       final db2 = MySqlDb(
           dbName: 'testdb',
           dbUser: 'test',

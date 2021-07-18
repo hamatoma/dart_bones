@@ -1,6 +1,6 @@
 #! /bin/bash
 cd lib
-dartfmt -w .
+dart format --fix .
 cd ..
 ./Coverage.sh
 

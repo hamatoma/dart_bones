@@ -30,7 +30,7 @@ class FileSync {
   /// Internal constructor
   FileSync._internal(this._logger);
 
-  void ensureDirectory(String path,
+  bool ensureDirectory(String path,
       {int? mode, int? owner, int? group, bool clear = false}) {
     _logger.error('unsupported: ensureDirectory()');
     throw UnsupportedError('FileSync.ensureDirectory()');

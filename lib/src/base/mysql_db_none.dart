@@ -62,7 +62,7 @@ class MySqlDb {
   }
 
   Future<bool> connect({bool? throwOnError}) async {
-    throw UnsupportedError('not implemented: MySqlDb.updateOne()');
+    throw UnsupportedError('not implemented: MySqlDb.connect()');
   }
 
   Future<bool> execute(String sql,
@@ -81,7 +81,7 @@ class MySqlDb {
 
   Future<dynamic> insertRaw(String sql,
       {List<dynamic>? params, bool? throwOnError}) async {
-    throw UnsupportedError('not implemented: MySqlDb.execute()');
+    throw UnsupportedError('not implemented: MySqlDb.insertRaw()');
   }
 
   Future<dynamic> readAll(String sql,
@@ -116,7 +116,12 @@ class MySqlDb {
 
   Future<bool> updateOne(String sql,
       {List<dynamic>? params, bool? throwOnError}) async {
-    throw UnsupportedError('not implemented: MySqlDb.connect()');
+    throw UnsupportedError('not implemented: MySqlDb.updateOne()');
+  }
+
+  Future<int?> updateRaw(String sql,
+      {List<dynamic>? params, bool? throwOnError}) async {
+    throw UnsupportedError('not implemented: MySqlDb.updateRaw()');
   }
 
   static dynamic convertNamedParams(
