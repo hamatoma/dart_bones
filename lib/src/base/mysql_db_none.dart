@@ -65,7 +65,12 @@ class MySqlDb {
     throw UnsupportedError('not implemented: MySqlDb.connect()');
   }
 
-  Future<bool> execute(String sql,
+  Future<int> deleteRaw(String sql,
+      {List<dynamic>? params, bool? throwOnError}) async {
+    throw UnsupportedError('not implemented: MySqlDb.deleteRaw()');
+  }
+
+  Future<int> execute(String sql,
       {List<dynamic>? params, bool? throwOnError}) async {
     throw UnsupportedError('not implemented: MySqlDb.execute()');
   }

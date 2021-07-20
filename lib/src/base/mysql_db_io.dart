@@ -223,12 +223,14 @@ class MySqlDb {
   /// [params] null or the positional parameters, e.g. ['john']
   /// [throwOnError]: null: use _throwOnError true: if an error occurs
   /// an exception is thrown. false: return value respects an error
-  /// return: null: failure otherwise: the Results instance
-  Future<Results?> deleteRaw(String sql,
+  /// return: -1: error otherwise: the count of affected rows.
+  Future<int> deleteRaw(String sql,
       {List<dynamic>? params, bool? throwOnError}) async {
+    var rc = -1;
     logger.logLevel >= LEVEL_LOOP && traceSql(sql, params);
     try {
       _lastResults = await _dbConnection?.query(sql, params);
+      rc = _lastResults == null ? 0 : _lastResults!.affectedRows ?? 0;
     } catch (error) {
       _lastResults = null;
       logger.error('cannot delete: $error\n$sql');
@@ -236,7 +238,7 @@ class MySqlDb {
         throw DbException('deleteRaw()', sql, params, error.toString());
       }
     }
-    return _lastResults;
+    return rc;
   }
 
   /// Executes a SQL statement.
@@ -244,25 +246,24 @@ class MySqlDb {
   /// [params] null or the positional parameters of the statement (given as '?')
   /// [throwOnError]: null: use _throwOnError true: if an error occurs
   /// an exception is thrown. false: return value respects an error
-  /// return: true: success
-  Future<bool> execute(String sql,
+  /// return: -1: error otherwise: the number of
+  Future<int> execute(String sql,
       {List<dynamic>? params, bool? throwOnError}) async {
-    var rc = true;
+    var rc = -1;
     logger.logLevel >= LEVEL_LOOP && traceSql(sql, params);
     _lastResults = null;
     if (_dbConnection == null) {
       if (throwOnError ?? _throwOnError) {
         throw DbException('execute()', sql, params, 'not connected');
       }
-      rc = false;
     } else {
       try {
         final results = await _dbConnection?.query(sql, params);
         _lastResults = results;
+        rc = results == null ? 0 : results.affectedRows ?? 0;
       } catch (error) {
         logger.error('cannot execute: $error\n$sql');
         _lastResults = null;
-        rc = false;
         if (throwOnError ?? _throwOnError) {
           throw DbException('execute()', sql, params, error.toString());
         }

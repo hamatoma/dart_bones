@@ -1,3 +1,10 @@
+## [1.2.1] - 2021.07.20 MySqlDb
+
+* MySqlDb:
+  * exports now deleteRaw()
+  * __breaking change__: expecute() returns now int (count of affected rows)
+  * __breaking change__: deleteRaw() returns now int (count of affected rows)
+  
 ## [1.1.2] - 2021.07.17 MySqlDb, BaseConfiguration
 
 * MySqlDb: exports now updateRaw()

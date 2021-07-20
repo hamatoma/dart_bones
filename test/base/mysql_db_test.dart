@@ -13,48 +13,52 @@ Future<MySqlDb> prepare(BaseLogger logger) async {
       sqlTracePrefix: 'sql: ',
       traceDataLength: 120,
       logger: logger);
-  var success;
+  bool success;
+  int count;
   await db.connect();
-  success = await db.execute('drop table if exists clouds;');
-  success = success && await db.execute('''create table clouds(
+  count = await db.execute('drop table if exists clouds;');
+  success = (count = await db.execute('''create table clouds(
   cloud_id int(10) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY,
   cloud_host int(10),
   cloud_name varchar(200) NOT NULL,
   cloud_total int(16),
   cloud_used int(16),
   cloud_free int(16)
-  );''');
-  success = success && await db.execute('commit;');
-  success = success && await db.execute('drop table if exists groups;');
-  success = success && await db.execute('''create table groups(
+  );''')) >= 0;
+  success = success && (count = await db.execute('commit;')) >= 0;
+  success = success &&
+      (count = await db.execute('drop table if exists groups;')) >= 0;
+  success = success && (count = await db.execute('''create table groups(
   group_id int(10) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY,
   group_name varchar(200) NOT NULL,
   created datetime default now()
-  );''');
-  success = success && await db.execute('commit;');
+  );''')) >= 0;
+  success = success && (count = await db.execute('commit;')) >= 0;
   await db.insertRaw(
       "insert into groups (group_id, group_name) values (1, 'admin');");
   await db.insertRaw(
       "insert into groups (group_id, group_name) values (2, 'user');");
-  success = success && await db.execute('commit;');
+  success = success && (count = await db.execute('commit;')) >= 0;
 
-  success = success && await db.execute('drop table if exists users;');
-  success = success && await db.execute('''create table users(
+  success =
+      success && (count = await db.execute('drop table if exists users;')) >= 0;
+  success = success && (count = await db.execute('''create table users(
   user_id int(10) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY,
   group_id int(10) unsigned,
   user_name varchar(200) NOT NULL,
   created datetime default now(),
   user_info text
   );
-  ''');
-  success = success && await db.execute('commit;');
+  ''')) >= 0;
+  success = success && (count = await db.execute('commit;')) >= 0;
   await db.insertRaw(
       "insert into users (user_id, user_name, group_id) values (1, 'adam', 1);");
   await db.insertRaw(
       "insert into users (user_id, user_name, group_id) values (2, 'eve', 2);");
   await db.insertRaw(
       "insert into users (user_id, user_name, group_id) values (3, 'david', 2);");
-  success = success && await db.execute('commit;');
+  success = success && (count = await db.execute('commit;')) >= 0;
+  expect(success, isTrue);
   final countUsers = await db.readOneInt('select count(*) from users;');
   logger.log('count users: $countUsers', LEVEL_SUMMERY);
   return db;
@@ -87,7 +91,7 @@ void main() async {
     });
     test('execute-fail-sql', () async {
       logger.log('expecting an error: wrong syntax');
-      expect(await db.execute('show columns;'), isFalse);
+      expect(await db.execute('show columns;'), -1);
     });
     test('fromConfiguration', () async {
       final config = BaseConfiguration({
@@ -100,7 +104,7 @@ void main() async {
       expect(db3.dbCode, equals('X'));
       expect(db3.dbPort, equals(1234));
       expect(db3.hasConnection, isFalse);
-      expect(await db3.execute('show tables;'), isFalse);
+      expect(await db3.execute('show tables;'), -1);
       db3.close();
     });
   });
@@ -460,16 +464,16 @@ void main() async {
           equals(
               'insert into users(group_id,user_name,user_info) values (?,?,?);'));
     });
-    test('getTables', () async{
+    test('getTables', () async {
       final tables = await db.getTables();
       expect(tables, isNotNull);
       expect(tables, isNotEmpty);
     });
-    test('hasTable', () async{
+    test('hasTable', () async {
       expect(await db.hasTable('groups'), isTrue);
       expect(await db.hasTable('groups.not.known', forceUpdate: true), isFalse);
     });
-    test('getColumns', () async{
+    test('getColumns', () async {
       logger.clear();
       final columns = await db.getColumns('users');
       expect(columns, isNotNull);
@@ -513,10 +517,11 @@ void main() async {
           isTrue);
     });
   });
-  group('fixes', (){
+  group('fixes', () {
     test('readOneString-missing record', () async {
       logger.clear();
-      final result = await db.readOneString("select * from users where users.user_name 'xxx'");
+      final result = await db
+          .readOneString("select * from users where users.user_name 'xxx'");
       expect(result, isNull);
     });
   });
