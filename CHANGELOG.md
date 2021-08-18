@@ -1,3 +1,9 @@
+## [1.2.2] - 2021.08.16 MySqlDb
+
+* MySqlDb:
+  * new: hasColumn(), executeScript(), executeScriptFile()
+  * change: MySqlDb._throwOnError renamed to throwOnError
+
 ## [1.2.1] - 2021.07.20 MySqlDb
 
 * MySqlDb:

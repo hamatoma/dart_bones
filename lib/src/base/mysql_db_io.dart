@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:io';
 
-import 'package:mysql1/mysql1.dart';
 import 'package:dart_bones/dart_bones.dart';
+import 'package:mysql1/mysql1.dart';
+
 import 'string_utils.dart' as string_utils;
 
 typedef CallbackOnSingleRow = Future<bool> Function(List<dynamic> row);
@@ -104,9 +106,9 @@ class MySqlDb {
   int timeout = 30;
   int traceDataLength = 200;
   String sqlTracePrefix = '';
-  bool _throwOnError = false;
+  var throwOnError = false;
   Results? _lastResults;
-
+  String currentScriptName = '';
   MySqlConnection? _dbConnection;
 
   final BaseLogger logger;
@@ -143,8 +145,6 @@ class MySqlDb {
   bool get hasConnection => _dbConnection != null;
 
   Results? get lastResults => _lastResults;
-
-  set throwOnError(bool value) => _throwOnError = value;
 
   /// Returns the insert statement representing the [result] in the [table].
   /// [excluded]: a list of column names: they will be ignored.
@@ -184,7 +184,7 @@ class MySqlDb {
   }
 
   /// Builds the connection to the MYSQL database.
-  /// [throwOnError]: null: use _throwOnError true: if an error occurs
+  /// [throwOnError]: null: use this._throwOnError true: if an error occurs
   //  an exception is thrown. false: return value respects an error
   /// return: true: success
   Future<bool> connect({bool? throwOnError}) async {
@@ -207,7 +207,7 @@ class MySqlDb {
       final msg = 'cannot connect (2): db: $dbName user: $dbUser';
       logger.error(msg);
       reported = true;
-      if (throwOnError ?? _throwOnError) {
+      if (throwOnError ?? this.throwOnError) {
         throw DbException(msg, '', [], '$exc\n$stack');
       }
       rc = false;
@@ -221,7 +221,7 @@ class MySqlDb {
   /// Executes an DELETE statement.
   /// [sql] the sql statement, e.g. 'insert into users (user_name) values (?);'
   /// [params] null or the positional parameters, e.g. ['john']
-  /// [throwOnError]: null: use _throwOnError true: if an error occurs
+  /// [throwOnError]: null: use this._throwOnError true: if an error occurs
   /// an exception is thrown. false: return value respects an error
   /// return: -1: error otherwise: the count of affected rows.
   Future<int> deleteRaw(String sql,
@@ -234,7 +234,7 @@ class MySqlDb {
     } catch (error) {
       _lastResults = null;
       logger.error('cannot delete: $error\n$sql');
-      if (throwOnError ?? _throwOnError) {
+      if (throwOnError ?? this.throwOnError) {
         throw DbException('deleteRaw()', sql, params, error.toString());
       }
     }
@@ -244,7 +244,7 @@ class MySqlDb {
   /// Executes a SQL statement.
   /// [sql] the sql statement, e.g. 'drop table test_db;'
   /// [params] null or the positional parameters of the statement (given as '?')
-  /// [throwOnError]: null: use _throwOnError true: if an error occurs
+  /// [throwOnError]: null: use this._throwOnError true: if an error occurs
   /// an exception is thrown. false: return value respects an error
   /// return: -1: error otherwise: the number of
   Future<int> execute(String sql,
@@ -253,7 +253,7 @@ class MySqlDb {
     logger.logLevel >= LEVEL_LOOP && traceSql(sql, params);
     _lastResults = null;
     if (_dbConnection == null) {
-      if (throwOnError ?? _throwOnError) {
+      if (throwOnError ?? this.throwOnError) {
         throw DbException('execute()', sql, params, 'not connected');
       }
     } else {
@@ -264,12 +264,178 @@ class MySqlDb {
       } catch (error) {
         logger.error('cannot execute: $error\n$sql');
         _lastResults = null;
-        if (throwOnError ?? _throwOnError) {
+        if (throwOnError ?? this.throwOnError) {
           throw DbException('execute()', sql, params, error.toString());
         }
       }
     }
     return rc;
+  }
+
+  /// Executes the sql statements in list of lines.
+  Future<String> executeScript(List<String> lines) async {
+    final regExpMissingTable = RegExp(r'^-- ! if missing table (\S+)');
+    final regExpMissingColumn = RegExp(r'^-- ! if missing column (\S+)\.(\S+)');
+    final regExpWord = RegExp(r'^(\w+)');
+    final regExpSay = RegExp(r'^^-- ! say (.*)$');
+    final regExpSelection = RegExp(r'^-- ! if no records in (select .*)$');
+    final rc = StringBuffer();
+    final buffer = StringBuffer();
+    var ix = 0;
+    var openIf = false;
+    RegExpMatch? match;
+    void onError() {
+      final last = logger.errors.last;
+      rc.writeln((last.startsWith('+++') ? '' : '+++ ') + last);
+      rc.writeln('+++ script stopped on error: '
+          '$currentScriptName-${ix + 1}');
+    }
+
+    while (ix < lines.length) {
+      final line = lines[ix].trim();
+      try {
+        if (line.startsWith('-- !')) {
+          var mode = '';
+          if (line.startsWith('-- ! else')) {
+            if (!openIf) {
+              logger.error(
+                  '$currentScriptName-${ix + 1}: unexpected else (no open if)');
+              onError();
+              break;
+            } else {
+              ix = findEndOfThen(ix + 1, lines);
+              openIf = false;
+              mode = 'skipped';
+            }
+          } else if (line.startsWith('-- ! endif')) {
+            if (!openIf) {
+              logger.error(
+                  '$currentScriptName-${ix + 1}: unexpected else (no open if)');
+              onError();
+              break;
+            } else {
+              openIf = false;
+              mode = 'skipped';
+            }
+          } else if ((match = regExpMissingTable.firstMatch(line)) != null) {
+            mode = 'table';
+          } else if ((match = regExpMissingColumn.firstMatch(line)) != null) {
+            mode = 'column';
+          } else if ((match = regExpSelection.firstMatch(line)) != null) {
+            mode = 'select';
+          } else if ((match = regExpSay.firstMatch(line)) != null) {
+            mode = 'say';
+          }
+          if (mode == 'say') {
+            rc.writeln(match!.group(1)!);
+          } else if (mode == 'skipped') {
+            // noting to do
+          } else if (mode.isNotEmpty) {
+            if (openIf) {
+              logger.error(
+                  '$currentScriptName-${ix + 1}: not allowed nesting of "if"');
+              onError();
+              break;
+            }
+            openIf = true;
+            switch (mode) {
+              case 'table':
+                if (await hasTable(match!.group(1)!)) {
+                  ix = findEndOfThen(ix + 1, lines);
+                }
+                break;
+              case 'column':
+                if (await hasColumn(match!.group(1)!, match.group(2)!)) {
+                  ix = findEndOfThen(ix + 1, lines);
+                }
+                break;
+              case 'select':
+                final list = await readAllAsLists(match!.group(1)!);
+                if (list != null && list.isNotEmpty) {
+                  ix = findEndOfThen(ix + 1, lines);
+                }
+                break;
+            }
+          } else {
+            logger.error(
+                '$currentScriptName-${ix + 1}: unknown control statement: $line');
+            onError();
+            break;
+          }
+        } else if (line.startsWith('--')) {
+          // do nothing
+        } else {
+          buffer.writeln(line);
+          if (line.endsWith(';') || ix == lines.length - 1) {
+            final sql = buffer.toString();
+            if ((match = regExpWord.firstMatch(sql)) != null) {
+              switch (match!.group(1)!.toLowerCase()) {
+                case 'select':
+                  final result = await readAllAsLists(sql);
+                  var first = true;
+                  if (result != null && result.isNotEmpty) {
+                    for (var row in result) {
+                      if (first) {
+                        rc.writeln('= ' +
+                            _lastResults!.fields
+                                .map((field) => field.name)
+                                .join(' | '));
+                        first = false;
+                      }
+                      rc.writeln((row as List).join(' | '));
+                    }
+                  }
+                  break;
+                case 'show':
+                default:
+                  await execute(sql);
+                  break;
+              }
+            }
+            buffer.clear();
+          }
+        }
+      } on DbException catch (exc) {
+        logger.error('+++ $currentScriptName-${ix + 1}: $exc');
+        onError();
+        break;
+      }
+      ++ix;
+    }
+    return rc.toString();
+  }
+
+  /// Executes the sql statements in a file named [filename].
+  /// Returns the output of the script.
+  Future<String> executeScriptFile(String filename) async {
+    final safe = currentScriptName;
+    currentScriptName = filename;
+    var rc = '';
+    try {
+      final lines = await File(filename).readAsLines();
+      rc = await executeScript(lines);
+    } on FileSystemException catch (exc) {
+      logger.error(exc.toString());
+      rc = '+++ $exc';
+    }
+    currentScriptName = safe;
+    return rc;
+  }
+
+  /// Finds the index of the line containing "else" or "endif".
+  /// Starts the search at [index]. [lines] is a list of lines to inspect.
+  int findEndOfThen(int index, List<String> lines) {
+    while (index < lines.length) {
+      if (lines[index].startsWith('-- ! else') ||
+          lines[index].startsWith('-- ! endif')) {
+        break;
+      }
+      ++index;
+    }
+    if (index >= lines.length) {
+      logger.error('$currentScriptName-${index + 1}: missing "-- ! endif"');
+    }
+    return index;
   }
 
   /// Returns all columns of a [table].
@@ -347,6 +513,23 @@ class MySqlDb {
   /// Tests whether the database has a table named [name].
   /// [forceUpdate]: false: the tables are read only if needed. true: the
   /// tables are read always.
+  Future<bool> hasColumn(String table, String column,
+      {bool forceUpdate = false}) async {
+    bool rc;
+    if (forceUpdate || tables == null) {
+      await getTables();
+    }
+    rc = tables?.contains(table) ?? false;
+    if (rc) {
+      final list = await getColumns(table);
+      rc = list.containsKey(column);
+    }
+    return rc;
+  }
+
+  /// Tests whether the database has a table named [name].
+  /// [forceUpdate]: false: the tables are read only if needed. true: the
+  /// tables are read always.
   Future<bool> hasTable(String name, {bool forceUpdate = false}) async {
     bool rc;
     if (forceUpdate || tables == null) {
@@ -359,7 +542,7 @@ class MySqlDb {
   /// Executes an INSERT statement for one record and returns the primary key.
   /// [sql] the sql statement, e.g. 'insert into users (user_name) values (?);'
   /// [params] null or the positional parameters, e.g. ['john']
-  /// [throwOnError]: null: use _throwOnError true: if an error occurs
+  /// [throwOnError]: null: use this._throwOnError true: if an error occurs
   //  an exception is thrown. false: return value respects an error
   /// return: 0: failure otherwise: the primary key of the new record
   Future<int> insertOne(String sql,
@@ -369,7 +552,7 @@ class MySqlDb {
     final rc = results?.insertId;
     if (results?.affectedRows != 1) {
       logger.error('insert failed:\n$sql');
-      if (throwOnError ?? _throwOnError) {
+      if (throwOnError ?? this.throwOnError) {
         throw DbException('insertOne()', sql, params,
             'affected rows: ${results?.affectedRows} instead of 1');
       }
@@ -380,7 +563,7 @@ class MySqlDb {
   /// Executes an INSERT statement.
   /// [sql] the sql statement, e.g. 'insert into users (user_name) values (?);'
   /// [params] null or the positional parameters, e.g. ['john']
-  /// [throwOnError]: null: use _throwOnError true: if an error occurs
+  /// [throwOnError]: null: use this._throwOnError true: if an error occurs
   /// an exception is thrown. false: return value respects an error
   /// return: null: failure otherwise: the Results instance
   Future<Results?> insertRaw(String sql,
@@ -393,7 +576,7 @@ class MySqlDb {
     } catch (error) {
       _lastResults = null;
       logger.error('insert failed: $error\n$sql');
-      if (throwOnError ?? _throwOnError) {
+      if (throwOnError ?? this.throwOnError) {
         throw DbException('insertRaw()', sql, params, error.toString());
       }
     }
@@ -403,7 +586,7 @@ class MySqlDb {
   /// Returns all records defined by a select statement given by [sql]
   /// and positional parameters given by [params].
   /// Example: readAll('select * from users where user_id=?', params: [1]);
-  /// [throwOnError]: null: use _throwOnError true: if an error occurs
+  /// [throwOnError]: null: use this._throwOnError true: if an error occurs
   /// an exception is thrown. false: return value respects an error
   /// return: null: failure otherwise: the Results instance
   Future<Results?> readAll(String sql,
@@ -414,7 +597,7 @@ class MySqlDb {
     } catch (error) {
       _lastResults = null;
       logger.error('readAll failed: $error\n$sql');
-      if (throwOnError ?? _throwOnError) {
+      if (throwOnError ?? this.throwOnError) {
         throw DbException('readAll()', sql, params, error.toString());
       }
     }
@@ -423,7 +606,7 @@ class MySqlDb {
 
   /// Selects some records via [sql] and positional [params] and returns a list
   /// of records as lists.
-  /// [throwOnError]: null: use _throwOnError true: if an error occurs
+  /// [throwOnError]: null: use this._throwOnError true: if an error occurs
   /// an exception is thrown. false: return value respects an error
   /// return: null: failure otherwise: a list of db records
   Future<List<dynamic>?> readAllAsLists(String sql,
@@ -444,7 +627,7 @@ class MySqlDb {
 
   /// Selects some records via [sql] and positional [params] and returns a list
   /// of record maps.
-  /// [throwOnError]: null: use _throwOnError true: if an error occurs
+  /// [throwOnError]: null: use this._throwOnError true: if an error occurs
   /// an exception is thrown. false: return value respects an error
   /// return: null: failure otherwise: a list of db records
   Future<List<Map<String, dynamic>>?> readAllAsMaps(String sql,
@@ -489,7 +672,7 @@ class MySqlDb {
   }
 
   /// Selects one record via [sql] and positional [params] and returns a record
-  /// [throwOnError]: null: use _throwOnError true: if an error occurs
+  /// [throwOnError]: null: use this._throwOnError true: if an error occurs
   /// an exception is thrown. false: return value respects an error
   /// map.
   /// return: null: failure otherwise: the record of the database
@@ -506,7 +689,7 @@ class MySqlDb {
           rc = it.current.fields;
         } else {
           logger.error('read failed:\n$sql');
-          if (throwOnError ?? _throwOnError) {
+          if (throwOnError ?? this.throwOnError) {
             throw DbException(
                 'readOneAsMap()', sql, params, 'more than one record');
           }
@@ -516,7 +699,7 @@ class MySqlDb {
     }
     if (!found) {
       logger.error('no record found:\n$sql');
-      if (throwOnError ?? _throwOnError) {
+      if (throwOnError ?? this.throwOnError) {
         throw DbException('readOneAsMap()', sql, params, 'no record');
       }
       rc = null;
@@ -529,7 +712,7 @@ class MySqlDb {
   /// Selects one value via [sql] and positional [params] and returns the value
   /// as integer.
   /// [nullAllowed]: false: to find no record is an error
-  /// [throwOnError]: null: use _throwOnError true: if an error occurs
+  /// [throwOnError]: null: use this._throwOnError true: if an error occurs
   /// an exception is thrown. false: return value respects an error
   /// return: null: failure otherwise: the field value
   Future<int?> readOneInt(String sql,
@@ -544,7 +727,7 @@ class MySqlDb {
         if (rc == null) {
           if ((row.values?.length ?? 0) > 1) {
             logger.error('more than one record found:\n$sql');
-            if (throwOnError ?? _throwOnError) {
+            if (throwOnError ?? this.throwOnError) {
               throw DbException(
                   'readOneInt()', sql, params, 'more than one value');
             }
@@ -555,7 +738,7 @@ class MySqlDb {
             rc = values[0] as int;
           } else {
             logger.error('not an integer:\n$sql');
-            if (throwOnError ?? _throwOnError) {
+            if (throwOnError ?? this.throwOnError) {
               throw DbException('readOneInt()', sql, params,
                   'not an integer: ${values == null ? '' : values[0]}');
             }
@@ -563,7 +746,7 @@ class MySqlDb {
           }
         } else {
           logger.error('more than one record found:\n$sql');
-          if (throwOnError ?? _throwOnError) {
+          if (throwOnError ?? this.throwOnError) {
             throw DbException(
                 'readOneInt()', sql, params, 'more than one record');
           }
@@ -572,7 +755,7 @@ class MySqlDb {
       }
       if (!found && !nullAllowed) {
         logger.error('no record found:\n$sql');
-        if (throwOnError ?? _throwOnError) {
+        if (throwOnError ?? this.throwOnError) {
           throw DbException('readOneInt()', sql, params, 'no record found');
         }
         rc = null;
@@ -585,7 +768,7 @@ class MySqlDb {
   /// Selects one value via [sql] and positional [params] and returns the value
   /// as string.
   /// [nullAllowed]: false: to find no record is an error
-  /// [throwOnError]: null: use _throwOnError true: if an error occurs
+  /// [throwOnError]: null: use this._throwOnError true: if an error occurs
   /// an exception is thrown. false: return value respects an error
   /// return: null: error otherwise: the field value
   Future<String?> readOneString(String sql,
@@ -603,7 +786,7 @@ class MySqlDb {
           }
         } else {
           logger.error('more than one record found:\n$sql');
-          if (throwOnError ?? _throwOnError) {
+          if (throwOnError ?? this.throwOnError) {
             throw DbException(
                 'readOneString()', sql, params, 'more than one record');
           }
@@ -613,7 +796,7 @@ class MySqlDb {
     }
     if (!found && !nullAllowed) {
       logger.error('no record found:\n$sql');
-      if (throwOnError ?? _throwOnError) {
+      if (throwOnError ?? this.throwOnError) {
         throw DbException('readOneString()', sql, params, 'no record');
       }
     }
@@ -660,7 +843,7 @@ class MySqlDb {
   /// Executes an UPDATE statement for one record.
   /// [sql] the sql statement, e.g. 'update users set user_name=? where user_id=?;'
   /// [params] null or the positional parameters, e.g. ['john']
-  /// [throwOnError]: null: use _throwOnError true: if an error occurs
+  /// [throwOnError]: null: use this._throwOnError true: if an error occurs
   /// an exception is thrown. false: return value respects an error
   /// return: true: success
   Future<bool> updateOne(String sql,
@@ -671,7 +854,7 @@ class MySqlDb {
     if (affected != 1) {
       final msg = 'affected rows: $affected instead of 1';
       logger.error('$msg\n$sql');
-      if (throwOnError ?? _throwOnError) {
+      if (throwOnError ?? this.throwOnError) {
         throw DbException('updateOne()', sql, params, msg);
       }
       rc = false;
@@ -684,7 +867,7 @@ class MySqlDb {
   /// [table]: the table to inspect
   /// [data]: data[<field_name>] = <field_value>
   /// [keys]: a list of field names which are all together unique to a record.
-  /// [throwOnError]: null: use _throwOnError true: if an error occurs
+  /// [throwOnError]: null: use this._throwOnError true: if an error occurs
   /// an exception is thrown. false: return value respects an error
   /// they will identify the record.
   void updateOrInsert(
@@ -756,7 +939,7 @@ class MySqlDb {
   /// Executes an UPDATE statement and returns the number of affected rows.
   /// [sql] the sql statement, e.g. "update users changed=null where user_name=?;"
   /// [params] null or the positional parameters, e.g. ['john']
-  /// [throwOnError]: null: use _throwOnError true: if an error occurs
+  /// [throwOnError]: null: use this._throwOnError true: if an error occurs
   /// an exception is thrown. false: return value respects an error
   /// return: null: failure otherwise: the number of affected rows
   Future<int?> updateRaw(String sql,
@@ -769,7 +952,7 @@ class MySqlDb {
     } catch (error) {
       logger.error('cannot update: $error\n$sql');
       _lastResults = null;
-      if (throwOnError ?? _throwOnError) {
+      if (throwOnError ?? this.throwOnError) {
         throw DbException('updateRaw()', sql, params, error.toString());
       }
     }

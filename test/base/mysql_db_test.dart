@@ -1,5 +1,6 @@
 import 'package:dart_bones/dart_bones.dart';
 import 'package:test/test.dart';
+import 'package:path/path.dart' as path;
 
 const SQL_ERROR = 'You have an error in your SQL syntax';
 
@@ -14,59 +15,58 @@ Future<MySqlDb> prepare(BaseLogger logger) async {
       traceDataLength: 120,
       logger: logger);
   bool success;
-  int count;
   await db.connect();
-  count = await db.execute('drop table if exists clouds;');
-  success = (count = await db.execute('''create table clouds(
+  await db.execute('drop table if exists clouds;');
+  success = await db.execute('''create table clouds(
   cloud_id int(10) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY,
   cloud_host int(10),
   cloud_name varchar(200) NOT NULL,
   cloud_total int(16),
   cloud_used int(16),
   cloud_free int(16)
-  );''')) >= 0;
-  success = success && (count = await db.execute('commit;')) >= 0;
-  success = success &&
-      (count = await db.execute('drop table if exists groups;')) >= 0;
-  success = success && (count = await db.execute('''create table groups(
+  );''') >= 0;
+  success = success && await db.execute('commit;') >= 0;
+  success = success && await db.execute('drop table if exists groups;') >= 0;
+  success = success && await db.execute('''create table groups(
   group_id int(10) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY,
   group_name varchar(200) NOT NULL,
   created datetime default now()
-  );''')) >= 0;
-  success = success && (count = await db.execute('commit;')) >= 0;
+  );''') >= 0;
+  success = success && await db.execute('commit;') >= 0;
   await db.insertRaw(
       "insert into groups (group_id, group_name) values (1, 'admin');");
   await db.insertRaw(
       "insert into groups (group_id, group_name) values (2, 'user');");
-  success = success && (count = await db.execute('commit;')) >= 0;
+  success = success && await db.execute('commit;') >= 0;
 
-  success =
-      success && (count = await db.execute('drop table if exists users;')) >= 0;
-  success = success && (count = await db.execute('''create table users(
+  success = success && await db.execute('drop table if exists users;') >= 0;
+  success = success && await db.execute('''create table users(
   user_id int(10) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY,
   group_id int(10) unsigned,
   user_name varchar(200) NOT NULL,
   created datetime default now(),
   user_info text
   );
-  ''')) >= 0;
-  success = success && (count = await db.execute('commit;')) >= 0;
+  ''') >= 0;
+  success = success && await db.execute('commit;') >= 0;
   await db.insertRaw(
       "insert into users (user_id, user_name, group_id) values (1, 'adam', 1);");
   await db.insertRaw(
       "insert into users (user_id, user_name, group_id) values (2, 'eve', 2);");
   await db.insertRaw(
       "insert into users (user_id, user_name, group_id) values (3, 'david', 2);");
-  success = success && (count = await db.execute('commit;')) >= 0;
+  success = success && await db.execute('commit;') >= 0;
   expect(success, isTrue);
   final countUsers = await db.readOneInt('select count(*) from users;');
   logger.log('count users: $countUsers', LEVEL_SUMMERY);
+  db.currentScriptName = 'test-script';
   return db;
 }
 
 void main() async {
   final logger = MemoryLogger(LEVEL_FINE);
-
+  FileSync.initialize(logger);
+  final fileSync = FileSync();
   var db;
   setUpAll(() async {
     db = await prepare(logger);
@@ -523,6 +523,136 @@ void main() async {
       final result = await db
           .readOneString("select * from users where users.user_name 'xxx'");
       expect(result, isNull);
+    });
+  });
+  group('executeScript-errors', () {
+    test('wrong sql syntax', () async {
+      db.throwOnError = true;
+      logger.clear();
+      db.currentScriptName = 'test-script';
+      final result = await db.executeScript('''selllect from x;
+'''
+          .split('\n'));
+      expect(result, '''+++ test-script-1: execute()
+Error 1064 (42000): You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near 'selllect from x' at line 1
+selllect from x;
++++ script stopped on error: test-script-1
+''');
+      expect(logger.contains("near 'selllect"), isTrue);
+    });
+    test('wrong command', () async {
+      logger.clear();
+      db.currentScriptName = 'test-script';
+      final result =
+          await db.executeScript('''-- ! iff no records in select * from users
+'''
+              .split('\n'));
+      expect(result,
+          '''+++ test-script-1: unknown control statement: -- ! iff no records in select * from users
++++ script stopped on error: test-script-1
+''');
+      expect(logger.contains('unknown control statement'), isTrue);
+    });
+  });
+  group('executeScript', () {
+    test('if no records, empty then, else relevant', () async {
+      logger.clear();
+      db.currentScriptName = 'test-script';
+      final result =
+          await db.executeScript('''-- ! if no records in select * from users
+-- ! else
+-- ! say records found
+-- ! endif
+'''
+              .split('\n'));
+      expect(result, '''records found
+''');
+      expect(logger.errors.isEmpty, isTrue);
+    });
+    test('if missing column, else is relevant', () async {
+      logger.clear();
+      db.currentScriptName = 'test-script';
+      final result =
+          await db.executeScript('''-- ! if missing column users.user_id
+-- ! say Error!
+-- ! else
+-- ! say column found
+-- ! endif
+'''
+              .split('\n'));
+      expect(result, '''column found
+''');
+      expect(logger.errors.isEmpty, isTrue);
+    });
+    test('if missing table, then is relevant, no else', () async {
+      logger.clear();
+      db.currentScriptName = 'test-script';
+      final result = await db.executeScript('''-- ! if missing table DonaldDuck
+-- ! say please create
+-- ! endif
+'''
+          .split('\n'));
+      expect(result, '''please create
+''');
+      expect(logger.errors.isEmpty, isTrue);
+    });
+    test('if missing table, then is relevant', () async {
+      logger.clear();
+      db.currentScriptName = 'test-script';
+      final result = await db.executeScript('''-- ! if missing table DonaldDuck
+-- ! say please create
+-- ! else
+-- say error!
+-- ! endif
+'''
+          .split('\n'));
+      expect(result, '''please create
+''');
+      expect(logger.errors.isEmpty, isTrue);
+    });
+    test('comment, say, select', () async {
+      logger.clear();
+      final result = await db.executeScript('''-- comment
+-- ! say === count users
+select count(*) from users;
+-- ! say === count groups
+select count(*) 
+from groups;
+'''
+          .split('\n'));
+      expect(result, '''=== count users
+= count(*)
+9
+=== count groups
+= count(*)
+2
+''');
+      expect(logger.errors.isEmpty, isTrue);
+    });
+  });
+  group('executeScriptFile', () {
+    test('simple script', () async {
+      db.throwOnError = true;
+      logger.clear();
+      final fn = path.join(fileSync.tempDirectory('unittest'), 'script.sql');
+      fileSync.toFile(fn, '-- ! say Hi\n-- ! say World');
+      final result = await db.executeScriptFile(fn);
+      expect(result, '''Hi
+World
+''');
+      expect(logger.errors.isEmpty, isTrue);
+    });
+    test('missing file', () async {
+      db.throwOnError = true;
+      logger.clear();
+      final fn = 'notExistingScript.sql';
+      final result = await db.executeScriptFile(fn);
+      expect(
+          result,
+          '+++ FileSystemException: Cannot open file, path = '
+          "'notExistingScript.sql'"
+          ' (OS Error: No such file or directory, errno = 2)');
+      expect(logger.errors.isNotEmpty, isTrue);
     });
   });
 }

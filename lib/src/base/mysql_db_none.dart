@@ -28,7 +28,7 @@ class DbException implements Exception {
 }
 
 class MySqlDb {
-  bool throwOnError = false;
+  var throwOnError = false;
   int timeout = 0;
   String? dbName;
   String? dbUser;
@@ -36,6 +36,7 @@ class MySqlDb {
   String? dbHost;
   int? dbPort;
   bool hasConnection = false;
+  String currentScriptName = '';
 
   /// Constructor
   MySqlDb(
@@ -73,6 +74,19 @@ class MySqlDb {
   Future<int> execute(String sql,
       {List<dynamic>? params, bool? throwOnError}) async {
     throw UnsupportedError('not implemented: MySqlDb.execute()');
+  }
+
+  Future<String> executeScript(List<String> lines) async {
+    throw UnsupportedError('not implemented: MySqlDb.executeScript()');
+  }
+
+  Future<String> executeScriptFile(String filename) async {
+    throw UnsupportedError('not implemented: MySqlDb.executeScriptFile()');
+  }
+
+  Future<bool> hasColumn(String table, String column,
+      {bool forceUpdate = false}) async {
+    throw UnsupportedError('not implemented: MySqlDb.hasColumn()');
   }
 
   Future<bool> hasTable(String name, {bool forceUpdate = false}) async {
